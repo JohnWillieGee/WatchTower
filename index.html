@@ -1508,23 +1508,28 @@ function parseBOMfdrPage(html, stateCode){
 }
 
 function parseLocalDateTime(s){
-  // Parse "M/D/YYYY H:MM:SS AM/PM" — times are already in AEST (local AU time).
+  // Parse BOM start-time-local ISO 8601: "2026-05-07T05:30:00+10:00"
+  // Extract date portion directly — no timezone conversion needed.
   if(!s) return null;
-  var m = s.match(/(\d+)\/(\d+)\/(\d+)\s+(\d+):(\d+):(\d+)\s*(AM|PM)/i);
-  if(!m) return null;
-  var mo = parseInt(m[1])-1; // 0-based month
-  var day = parseInt(m[2]);
-  var year = parseInt(m[3]);
-  var hr = parseInt(m[4]);
-  var min = parseInt(m[5]);
-  var ampm = m[7].toUpperCase();
-  if(ampm === 'PM' && hr !== 12) hr += 12;
-  if(ampm === 'AM' && hr === 12) hr = 0;
-  // Times are already AEST — no UTC offset needed
   var days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
   var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  var d = new Date(year, mo, day, hr, min, 0);
-  return days[d.getDay()] + ' ' + d.getDate() + ' ' + months[d.getMonth()];
+  // ISO 8601 local: YYYY-MM-DDTHH:MM:SS+HH:MM
+  var iso = s.match(/^(\d{4})-(\d{2})-(\d{2})T/);
+  if(iso){
+    var year = parseInt(iso[1]);
+    var mo   = parseInt(iso[2]) - 1;
+    var day  = parseInt(iso[3]);
+    var d = new Date(year, mo, day);
+    return days[d.getDay()] + ' ' + day + ' ' + months[mo];
+  }
+  // Legacy fallback: "M/D/YYYY H:MM:SS AM/PM"
+  var m = s.match(/(\d+)\/(\d+)\/(\d+)\s+(\d+):(\d+):(\d+)\s*(AM|PM)/i);
+  if(!m) return null;
+  var mo2 = parseInt(m[1])-1;
+  var day2 = parseInt(m[2]);
+  var year2 = parseInt(m[3]);
+  var d2 = new Date(year2, mo2, day2);
+  return days[d2.getDay()] + ' ' + day2 + ' ' + months[mo2];
 }
 
 function loadFDRFromCSV(){ return false; } // no embedded data — live_data.json only
