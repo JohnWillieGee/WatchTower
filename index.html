@@ -162,6 +162,54 @@ header{background:var(--panel);border-bottom:1px solid var(--border);padding:0 1
 #lightning-iframe{flex:1;border:none;width:100%;height:100%;display:block;}
 #lightning-resize{position:absolute;bottom:0;right:0;width:16px;height:16px;cursor:nwse-resize;z-index:1003;background:linear-gradient(135deg,transparent 40%,#9775fa 40%,#9775fa 55%,transparent 55%,transparent 70%,#9775fa 70%,#9775fa 85%,transparent 85%);opacity:0.6;}
 #lightning-resize:hover{opacity:1;}
+
+/* ── RISK PANEL ─────────────────────────────────────────────────────────── */
+#risk-panel{width:300px;min-width:300px;background:var(--panel);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;transition:width .25s,min-width .25s;flex-shrink:0;}
+#risk-panel.collapsed{width:0;min-width:0;}
+#risk-panel .wp-head{padding:10px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-shrink:0;}
+#risk-panel .wp-head h3{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin:0;white-space:nowrap;}
+#risk-content{flex:1;overflow-y:auto;padding:8px 0;}
+.risk-distance-bar{padding:6px 14px 8px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;font-size:10px;color:var(--text2);flex-shrink:0;}
+.risk-distance-bar input[type=range]{flex:1;accent-color:var(--accent2);}
+#risk-dist-label{min-width:38px;text-align:right;color:var(--text);font-weight:700;}
+.risk-group{margin:0 0 4px;}
+.risk-group-hdr{padding:5px 14px 3px;font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;display:flex;align-items:center;gap:6px;position:sticky;top:0;background:var(--panel);z-index:1;}
+.risk-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.risk-count{font-weight:400;color:var(--text2);}
+.risk-row{padding:6px 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s;}
+.risk-row:hover{background:var(--panel2);}
+.risk-site-name{font-size:11px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:5px;}
+.risk-site-sub{font-size:9px;color:var(--text2);margin:1px 0 3px;}
+.risk-reason{font-size:9px;color:var(--text2);line-height:1.4;}
+.risk-src{color:var(--accent2);font-weight:600;}
+.risk-more{font-size:9px;color:var(--text2);font-style:italic;margin-top:2px;}
+.risk-am-badge{font-size:8px;background:#f0a500;color:#000;border-radius:3px;padding:0 4px;font-weight:700;}
+/* Risk map rings */
+.risk-ring{border-radius:50%;border:2.5px solid;position:absolute;transform:translate(-50%,-50%);pointer-events:none;}
+.risk-ring-1{opacity:.7;}
+.risk-ring-2{opacity:.85;}
+.risk-ring-3{opacity:.95;}
+.risk-ring-4{opacity:1;}
+@keyframes riskPulse{0%{transform:translate(-50%,-50%) scale(1);opacity:1;}70%{transform:translate(-50%,-50%) scale(1.8);opacity:.3;}100%{transform:translate(-50%,-50%) scale(1);opacity:1;}}
+.risk-pulse{animation:riskPulse 1.6s ease-out infinite;}
+/* Risk alert popup */
+.risk-alert-popup{position:fixed;bottom:24px;right:24px;width:320px;background:var(--panel);border:2px solid;border-radius:10px;padding:14px 16px;z-index:9999;box-shadow:0 8px 32px rgba(0,0,0,.6);font-family:monospace;}
+.risk-alert-type{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:4px;}
+.risk-alert-site{font-size:15px;font-weight:700;color:var(--text);margin-bottom:2px;}
+.risk-alert-state{font-size:10px;color:var(--text2);margin-bottom:8px;}
+.risk-alert-reasons{margin-bottom:10px;}
+.risk-alert-actions{display:flex;gap:8px;}
+.risk-ack-btn{flex:1;background:var(--panel2);border:1px solid var(--border);color:var(--text);padding:6px;border-radius:var(--radius);cursor:pointer;font-size:10px;font-family:monospace;}
+.risk-ack-btn:hover{background:var(--border);}
+.risk-fly-btn{flex:1;background:var(--accent2);border:none;color:#000;padding:6px;border-radius:var(--radius);cursor:pointer;font-size:10px;font-weight:700;font-family:monospace;}
+@keyframes riskFlash{0%,100%{opacity:1;}50%{opacity:.3;}}
+.risk-alert-flash{animation:riskFlash .7s ease-in-out infinite;}
+/* h-risk header stat */
+.hstat.risk .val{color:#ff6b3d;}
+#btn-risk-panel{background:var(--panel);border:1px solid var(--border);color:var(--text2);padding:4px 10px;border-radius:var(--radius);cursor:pointer;font-size:10px;font-family:monospace;letter-spacing:.04em;white-space:nowrap;}
+#btn-risk-panel.on{background:var(--accent2);color:#000;border-color:var(--accent2);font-weight:700;}
+/* wp-none reuse */
+.wp-none{padding:20px 14px;text-align:center;font-size:11px;color:var(--text2);}
 </style>
 </head>
 <body>
@@ -173,6 +221,8 @@ header{background:var(--panel);border-bottom:1px solid var(--border);padding:0 1
     <div class="hstat"><div class="val" id="h-sites">-</div><div class="lbl">Sites</div></div>
     <div class="hstat red"><div class="val" id="h-warnings">-</div><div class="lbl">Warnings</div></div>
     <div class="hstat red"><div class="val" id="h-incidents">-</div><div class="lbl">Incidents</div></div>
+    <div class="hstat risk"><div class="val" id="h-risk">-</div><div class="lbl">At Risk</div></div>
+    <button id="btn-risk-panel" onclick="toggleRiskPanel()">&#9888; Risk</button>
     <button id="refresh-btn" onclick="refreshAll()">&#8635; Refresh</button>
     <button id="theme-toggle" onclick="toggleTheme()">&#9728;</button>
   </div>
@@ -445,7 +495,22 @@ header{background:var(--panel);border-bottom:1px solid var(--border);padding:0 1
             <div class="feed-status-row"><div class="feed-dot loading" id="fdot-qld"></div><span class="feed-name">QLD</span><span class="feed-msg" id="fmsg-qld">QFD — via Action...</span><span class="feed-count" id="fcnt-qld"></span></div>
             <div class="feed-status-row"><div class="feed-dot loading" id="fdot-sa"></div><span class="feed-name">SA</span><span class="feed-msg" id="fmsg-sa">CFS — via Action...</span><span class="feed-count" id="fcnt-sa"></span></div>
             <div class="feed-status-row"><div class="feed-dot loading" id="fdot-wa"></div><span class="feed-name">WA</span><span class="feed-msg" id="fmsg-wa">DFES — via Action...</span><span class="feed-count" id="fcnt-wa"></span></div>
-            <div class="feed-status-row"><div class="feed-dot loading" id="fdot-tas"></div><span class="feed-name">TAS</span><span class="feed-msg" id="fmsg-tas">TasALERT — via Action...</span><span class="feed-count" id="fcnt-tas"></span></div>
+            <div class="feed-status-row"><div class="feed-dot loading" id="fdot-tas"></div><span class="feed-name">TAS</span><span class="feed-msg" id="fmsg-tas">TasALERT — via Action...</span><span class="
+  <div id="risk-panel" class="collapsed">
+    <div class="wp-head">
+      <h3>&#9888; Risk Assessment</h3>
+      <button class="wp-toggle" onclick="toggleRiskPanel()" title="Close risk panel">&#10005;</button>
+    </div>
+    <div class="risk-distance-bar">
+      <span>Proximity</span>
+      <input type="range" min="10" max="200" step="5" value="50"
+             oninput="setRiskDistance(this.value)">
+      <span id="risk-dist-label">50 km</span>
+    </div>
+    <div id="risk-content">
+      <div class="wp-none">Press Refresh or wait for data to load</div>
+    </div>
+  </div>feed-count" id="fcnt-tas"></span></div>
           </div>
           <div class="wp-state-tabs">
             <button class="wp-tab on" onclick="showIncState('all')" id="inc-tab-all">All</button>
@@ -1988,6 +2053,8 @@ function fetchBOMWarnings() {
       } else {
         statusEl("alerts-fetch-status","fetch-ok","&#10003; "+nz+" warning zone"+(nz>1?"s":"")+" \u00b7 RFS");
       }
+      // Run risk assessment after all data is loaded
+      computeRisks();
     })
     .catch(function(e){
       // live_data.json not found or unreadable — GitHub Action may not have run yet
@@ -2781,6 +2848,454 @@ function stopResizeLightning(){
   document.removeEventListener('mouseup',stopResizeLightning);
 }
 function toggleWeatherPanel(){document.getElementById("weather-panel").classList.toggle("collapsed");setTimeout(function(){if(map)map.invalidateSize();},260);}
+
+
+// ── WATCHTOWER: RISK ASSESSMENT ENGINE ──────────────────────────────────────
+//
+// Risk levels:
+//   IMPACTED    (4) — site inside Emergency Warning polygon / incident < 5km
+//   DIRECT      (3) — site inside Watch & Act polygon / incident < threshold
+//   WARNING     (2) — site inside Advice polygon / BOM fire-weather or cyclone in district
+//   ADVISORY    (1) — BOM storm/severe warning in district (all sites; MF sites elevated)
+//
+// Data sources used:
+//   alertsData[]        — NSW RFS CAP polygons  {coords:[lng,lat], alertLevel, title}
+//   allIncidents{}      — State fire/emergency incidents {lat,lng,polys[],alertLevel,title,type}
+//   bomWarnings[]       — BOM product warnings  {type, state, coords:[lat,lng]}
+//   BOM_PW_DISTRICTS    — GeoJSON district boundaries for point-in-polygon
+
+var RISK_LEVEL = { NONE:0, ADVISORY:1, WARNING:2, DIRECT:3, IMPACTED:4 };
+var RISK_LABEL = { 0:'', 1:'ADVISORY', 2:'WARNING', 3:'DIRECT THREAT', 4:'SITE IMPACTED' };
+var RISK_COLOR = { 0:'', 1:'#f0c040', 2:'#f0a500', 3:'#ff6b3d', 4:'#ff2222' };
+
+// Distance threshold in km (driven by slider)
+var riskDistanceKm = 50;
+
+// Current computed risks: array of {site, level, reasons:[]}
+var riskResults = [];
+
+// Acknowledged alert IDs (site name + level)
+var riskAcknowledged = new Set();
+
+// Whether panel is open
+var riskPanelOpen = false;
+
+// ── Geometry helpers ─────────────────────────────────────────────────────────
+
+function pointInPolygon(lat, lng, ring) {
+  // ring: array of [lng,lat] pairs (GeoJSON order)
+  var x = lng, y = lat, inside = false;
+  for (var i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    var xi = ring[i][0], yi = ring[i][1];
+    var xj = ring[j][0], yj = ring[j][1];
+    if (((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi)) {
+      inside = !inside;
+    }
+  }
+  return inside;
+}
+
+function pointInGeoJSONPolygon(lat, lng, geometry) {
+  if (!geometry) return false;
+  if (geometry.type === 'Polygon') {
+    if (!pointInPolygon(lat, lng, geometry.coordinates[0])) return false;
+    // Check holes
+    for (var h = 1; h < geometry.coordinates.length; h++) {
+      if (pointInPolygon(lat, lng, geometry.coordinates[h])) return false;
+    }
+    return true;
+  }
+  if (geometry.type === 'MultiPolygon') {
+    return geometry.coordinates.some(function(poly) {
+      if (!pointInPolygon(lat, lng, poly[0])) return false;
+      for (var h = 1; h < poly.length; h++) {
+        if (pointInPolygon(lat, lng, poly[h])) return false;
+      }
+      return true;
+    });
+  }
+  return false;
+}
+
+function haversineKm(lat1, lng1, lat2, lng2) {
+  var R = 6371;
+  var dLat = (lat2 - lat1) * Math.PI / 180;
+  var dLng = (lng2 - lng1) * Math.PI / 180;
+  var a = Math.sin(dLat/2)*Math.sin(dLat/2) +
+          Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*
+          Math.sin(dLng/2)*Math.sin(dLng/2);
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function minDistToPolyKm(lat, lng, ring) {
+  // Minimum distance from point to any vertex of ring [lng,lat]
+  var min = Infinity;
+  for (var i = 0; i < ring.length; i++) {
+    var d = haversineKm(lat, lng, ring[i][1], ring[i][0]);
+    if (d < min) min = d;
+  }
+  return min;
+}
+
+function distToIncidentKm(site, inc) {
+  // Distance from site to incident — use polygon boundary if available, else point
+  var minD = haversineKm(site.lat, site.lon, inc.lat, inc.lng);
+  if (inc.polys && inc.polys.length > 0) {
+    inc.polys.forEach(function(poly) {
+      var d = minDistToPolyKm(site.lat, site.lon, poly.coordinates[0]);
+      if (d < minD) minD = d;
+    });
+  }
+  return minD;
+}
+
+function siteHasAM(site) {
+  return site.sv && site.sv.some(function(sv) { return sv.mod === 'AM'; });
+}
+
+// ── BOM district point-in-polygon ────────────────────────────────────────────
+
+function getBOMDistrictsForSite(site) {
+  // Returns array of district names the site falls inside
+  if (!BOM_PW_DISTRICTS) return [];
+  var names = [];
+  BOM_PW_DISTRICTS.features.forEach(function(feat) {
+    if (pointInGeoJSONPolygon(site.lat, site.lon, feat.geometry)) {
+      names.push(feat.properties.name || feat.properties.aac || '');
+    }
+  });
+  return names;
+}
+
+// ── Main risk computation ────────────────────────────────────────────────────
+
+function computeRisks() {
+  if (!BAI_SITES || !BAI_SITES.length) return;
+  riskResults = [];
+
+  BAI_SITES.forEach(function(site) {
+    var topLevel = RISK_LEVEL.NONE;
+    var reasons = [];
+    var isAM = siteHasAM(site);
+
+    // ── 1. NSW Alert Zone polygons (CAP) ──────────────────────────────────
+    if (alertsData && alertsData.length) {
+      alertsData.forEach(function(zone) {
+        if (!zone.coords || zone.coords.length < 3) return;
+        // coords are [lng,lat] pairs
+        if (pointInPolygon(site.lat, site.lon, zone.coords)) {
+          var al = (zone.alertLevel || '').toLowerCase();
+          var lvl, label;
+          if (al.includes('emergency')) {
+            lvl = RISK_LEVEL.IMPACTED; label = 'Inside Emergency Warning zone';
+          } else if (al.includes('watch')) {
+            lvl = RISK_LEVEL.DIRECT; label = 'Inside Watch & Act zone';
+          } else {
+            lvl = RISK_LEVEL.WARNING; label = 'Inside Advice zone';
+          }
+          if (lvl > topLevel) topLevel = lvl;
+          reasons.push({ lvl: lvl, src: 'NSW RFS', detail: label + ' — ' + (zone.title || zone.areaName || '') });
+        }
+      });
+    }
+
+    // ── 2. Incident proximity (all states, point + polygon) ───────────────
+    ['nsw','vic','qld','sa','wa','tas'].forEach(function(key) {
+      (allIncidents[key] || []).filter(isActiveIncident).forEach(function(inc) {
+        var d = distToIncidentKm(site, inc);
+        if (d > riskDistanceKm) return;
+
+        var al = (inc.alertLevel || '').toLowerCase();
+        var lvl;
+        // Inside polygon or very close = impacted
+        if (inc.polys && inc.polys.length > 0 && inc.polys.some(function(poly) {
+              return pointInPolygon(site.lat, site.lon, poly.coordinates[0]);
+            })) {
+          lvl = RISK_LEVEL.IMPACTED;
+        } else if (al.includes('emergency') || d < 5) {
+          lvl = RISK_LEVEL.IMPACTED;
+        } else if (al.includes('watch') || d < 20) {
+          lvl = RISK_LEVEL.DIRECT;
+        } else {
+          lvl = RISK_LEVEL.WARNING;
+        }
+        if (lvl > topLevel) topLevel = lvl;
+        reasons.push({
+          lvl: lvl,
+          src: inc.state + ' ' + (inc.agency || 'RFS'),
+          detail: inc.title + ' — ' + Math.round(d) + ' km' +
+                  (inc.alertLevel ? ' [' + inc.alertLevel + ']' : ''),
+          dist: d, lat: inc.lat, lng: inc.lng
+        });
+      });
+    });
+
+    // ── 3. BOM Warnings — district matching ──────────────────────────────
+    if (bomWarnings && bomWarnings.length) {
+      var siteDistricts = getBOMDistrictsForSite(site);
+
+      bomWarnings.filter(function(w) {
+        return !w.cancelled && RELEVANT_WARN_TYPES.indexOf(w.type) !== -1;
+      }).forEach(function(w) {
+        // Check if warning district matches site's BOM districts
+        // Use coords proximity as fallback (warning coords already matched to district)
+        var distToWarn = haversineKm(site.lat, site.lon, w.coords[0], w.coords[1]);
+        var inDistrict = distToWarn < 300; // rough district proximity fallback
+
+        // Better: check if warning state matches site state
+        var stateMatch = !w.state || w.state.toUpperCase() === (site.state||'').toUpperCase();
+        if (!stateMatch && distToWarn > 400) return;
+
+        var lvl = RISK_LEVEL.NONE;
+        var wtype = w.type;
+
+        if (wtype === 'fire_weather') {
+          lvl = RISK_LEVEL.WARNING;
+        } else if (wtype === 'cyclone') {
+          lvl = RISK_LEVEL.DIRECT;
+        } else if (wtype === 'thunderstorm' || wtype === 'severe_weather') {
+          // All sites get ADVISORY; AM/MF sites get WARNING
+          lvl = isAM ? RISK_LEVEL.WARNING : RISK_LEVEL.ADVISORY;
+        } else if (wtype === 'heatwave') {
+          lvl = RISK_LEVEL.ADVISORY;
+        }
+
+        if (lvl === RISK_LEVEL.NONE) return;
+        if (!inDistrict && distToWarn > 300) return;
+
+        if (lvl > topLevel) topLevel = lvl;
+        var isStormAM = isAM && (wtype === 'thunderstorm' || wtype === 'severe_weather');
+        reasons.push({
+          lvl: lvl,
+          src: 'BOM',
+          detail: w.title,
+          type: wtype,
+          isStormAM: isStormAM
+        });
+      });
+    }
+
+    if (topLevel > RISK_LEVEL.NONE) {
+      // Sort reasons by severity desc
+      reasons.sort(function(a,b) { return b.lvl - a.lvl; });
+      riskResults.push({ site: site, level: topLevel, reasons: reasons });
+    }
+  });
+
+  // Sort results by level desc then site name
+  riskResults.sort(function(a,b) {
+    return b.level - a.level || a.site.name.localeCompare(b.site.name);
+  });
+
+  renderRiskPanel();
+  updateRiskMapMarkers();
+  checkRiskAlerts();
+}
+
+// ── Risk map markers (pulsing rings on site) ─────────────────────────────────
+
+var riskMarkerLayer = null;
+
+function updateRiskMapMarkers() {
+  if (!riskMarkerLayer) riskMarkerLayer = L.layerGroup().addTo(map);
+  riskMarkerLayer.clearLayers();
+
+  riskResults.forEach(function(r) {
+    var col = RISK_COLOR[r.level];
+    var site = r.site;
+    var hasFire = r.reasons.some(function(rs){
+      return rs.src && (rs.src.includes('RFS')||rs.src.includes('QFD')||rs.src.includes('CFS')||
+             rs.src.includes('DFES')||rs.src.includes('EMV')||rs.src.includes('TasALERT')||
+             rs.src.includes('NSW')||rs.src.includes('VIC')||rs.src.includes('QLD')||
+             rs.src.includes('SA')||rs.src.includes('WA')||rs.src.includes('TAS'));
+    });
+    var needsPulse = (hasFire && r.level >= RISK_LEVEL.DIRECT) ||
+      r.level >= RISK_LEVEL.IMPACTED ||
+      (r.level >= RISK_LEVEL.WARNING && r.reasons.some(function(rs) { return rs.isStormAM; }));
+    var size = [32,32,40,48][r.level-1] || 32;
+    var html = '<div class="risk-ring risk-ring-' + r.level + (needsPulse?' risk-pulse':'') + '" ' +
+               'style="width:'+size+'px;height:'+size+'px;border-color:'+col+'"></div>';
+    L.marker([site.lat, site.lon], {
+      icon: L.divIcon({
+        html: html,
+        className: '',
+        iconSize: [size, size],
+        iconAnchor: [size/2, size/2]
+      }),
+      zIndexOffset: 500,
+      interactive: false
+    }).addTo(riskMarkerLayer);
+  });
+}
+
+// ── Risk alert popups (fire + storm/AM) ──────────────────────────────────────
+
+var riskAlertQueue = [];
+var riskAlertActive = false;
+
+function checkRiskAlerts() {
+  riskAlertQueue = [];
+  riskResults.forEach(function(r) {
+    var site = r.site;
+    var needsAlert = false;
+    var alertReasons = [];
+
+    // Fire threats at any level
+    var fireReasons = r.reasons.filter(function(rs) {
+      return rs.src && (rs.src.includes('RFS') || rs.src.includes('QFD') ||
+             rs.src.includes('CFS') || rs.src.includes('DFES') ||
+             rs.src.includes('EMV') || rs.src.includes('TasALERT') ||
+             rs.src.includes('NSW') || rs.src.includes('VIC') ||
+             rs.src.includes('QLD') || rs.src.includes('SA') ||
+             rs.src.includes('WA') || rs.src.includes('TAS'));
+    });
+    if (fireReasons.length > 0 && r.level >= RISK_LEVEL.DIRECT) {
+      needsAlert = true;
+      alertReasons = alertReasons.concat(fireReasons);
+    }
+
+    // BOM storm/severe warnings for AM/MF sites
+    var stormAMReasons = r.reasons.filter(function(rs) { return rs.isStormAM; });
+    if (stormAMReasons.length > 0) {
+      needsAlert = true;
+      alertReasons = alertReasons.concat(stormAMReasons);
+    }
+
+    if (!needsAlert) return;
+    var ackKey = site.name + '|' + r.level + '|' + alertReasons[0].detail;
+    if (riskAcknowledged.has(ackKey)) return;
+
+    riskAlertQueue.push({ site: site, level: r.level, reasons: alertReasons, ackKey: ackKey });
+  });
+
+  if (riskAlertQueue.length > 0 && !riskAlertActive) showNextRiskAlert();
+}
+
+function showNextRiskAlert() {
+  if (riskAlertQueue.length === 0) { riskAlertActive = false; return; }
+  riskAlertActive = true;
+  var item = riskAlertQueue.shift();
+  var col = RISK_COLOR[item.level];
+  var isFireThreat = item.reasons.some(function(r){
+    return r.src && (r.src.includes('RFS')||r.src.includes('QFD')||r.src.includes('CFS')||
+           r.src.includes('DFES')||r.src.includes('EMV')||r.src.includes('TasALERT')||
+           r.src.includes('NSW')||r.src.includes('VIC')||r.src.includes('QLD')||
+           r.src.includes('SA')||r.src.includes('WA')||r.src.includes('TAS'));
+  });
+  var isPulse = (isFireThreat && item.level >= RISK_LEVEL.DIRECT) ||
+    item.level >= RISK_LEVEL.IMPACTED ||
+    item.reasons.some(function(r){return r.isStormAM;});
+  var isFireStorm = item.reasons.some(function(r){ return r.isStormAM; });
+  var typeIcon = isFireStorm ? '⛈ STORM WARNING — AM/MF SITE' : '🔥 FIRE THREAT';
+
+  var reasonHtml = item.reasons.slice(0,3).map(function(r) {
+    return '<div style="font-size:10px;color:var(--text2);padding:2px 0;border-bottom:1px solid var(--border)">'+
+           '<span style="color:'+RISK_COLOR[r.lvl]+';font-weight:700">'+RISK_LABEL[r.lvl]+'</span> &mdash; '+
+           r.detail + '</div>';
+  }).join('');
+
+  var html = '<div id="risk-alert-popup" class="risk-alert-popup' + (isPulse?' risk-alert-flash':'') + '" '+
+             'style="border-color:'+col+'">' +
+    '<div class="risk-alert-type" style="color:'+col+'">' + typeIcon + '</div>' +
+    '<div class="risk-alert-site">' + item.site.name + '</div>' +
+    '<div class="risk-alert-state">' + (item.site.state||'') + (item.site.town?' &bull; '+item.site.town:'') + '</div>' +
+    '<div class="risk-alert-reasons">' + reasonHtml + '</div>' +
+    '<div class="risk-alert-actions">' +
+      '<button class="risk-ack-btn" onclick="acknowledgeRiskAlert(\''+item.ackKey+'\')">Acknowledge</button>' +
+      '<button class="risk-fly-btn" onclick="flyToRiskSite('+item.site.lat+','+item.site.lon+')">Go to site</button>' +
+    '</div>' +
+  '</div>';
+
+  var existing = document.getElementById('risk-alert-popup');
+  if (existing) existing.remove();
+  document.body.insertAdjacentHTML('beforeend', html);
+}
+
+function acknowledgeRiskAlert(key) {
+  riskAcknowledged.add(key);
+  var el = document.getElementById('risk-alert-popup');
+  if (el) el.remove();
+  riskAlertActive = false;
+  setTimeout(showNextRiskAlert, 400);
+}
+
+function flyToRiskSite(lat, lng) {
+  map.flyTo([lat, lng], 11, { duration: 0.8 });
+}
+
+// ── Risk panel render ────────────────────────────────────────────────────────
+
+function renderRiskPanel() {
+  var el = document.getElementById('risk-content');
+  if (!el) return;
+
+  var total = riskResults.length;
+  document.getElementById('h-risk').textContent = total > 0 ? total : '-';
+
+  if (total === 0) {
+    el.innerHTML = '<div class="wp-none" style="color:var(--accent2)">✓ No sites at risk within ' +
+                   riskDistanceKm + ' km</div>';
+    return;
+  }
+
+  // Group by level
+  var byLevel = {4:[], 3:[], 2:[], 1:[]};
+  riskResults.forEach(function(r) { byLevel[r.level].push(r); });
+
+  var html = '';
+  [4,3,2,1].forEach(function(lvl) {
+    var items = byLevel[lvl];
+    if (!items.length) return;
+    var col = RISK_COLOR[lvl];
+    html += '<div class="risk-group">' +
+            '<div class="risk-group-hdr" style="color:'+col+'">' +
+            '<span class="risk-dot" style="background:'+col+'"></span>' +
+            RISK_LABEL[lvl] + ' <span class="risk-count">('+items.length+')</span>' +
+            '</div>';
+    items.forEach(function(r) {
+      var site = r.site;
+      var topReason = r.reasons[0];
+      var isAM = siteHasAM(site);
+      html += '<div class="risk-row" onclick="flyToRiskSite('+site.lat+','+site.lon+')">' +
+              '<div class="risk-site-name">' + site.name +
+              (isAM ? '<span class="risk-am-badge">AM</span>' : '') + '</div>' +
+              '<div class="risk-site-sub">' + (site.state||'') +
+              (site.town ? ' &bull; ' + site.town : '') + '</div>' +
+              '<div class="risk-reason">' +
+              '<span class="risk-src">' + topReason.src + '</span> ' +
+              topReason.detail.substring(0,60) + (topReason.detail.length>60?'&hellip;':'') +
+              '</div>' +
+              (r.reasons.length > 1 ?
+                '<div class="risk-more">+' + (r.reasons.length-1) + ' more risk'+(r.reasons.length>2?'s':'')+'</div>' : '') +
+              '</div>';
+    });
+    html += '</div>';
+  });
+
+  el.innerHTML = html;
+}
+
+function toggleRiskPanel() {
+  riskPanelOpen = !riskPanelOpen;
+  var panel = document.getElementById('risk-panel');
+  var btn = document.getElementById('btn-risk-panel');
+  if (riskPanelOpen) {
+    panel.classList.remove('collapsed');
+    btn.classList.add('on');
+    if (riskResults.length === 0) computeRisks();
+  } else {
+    panel.classList.add('collapsed');
+    btn.classList.remove('on');
+  }
+  setTimeout(function(){ if(map) map.invalidateSize(); }, 260);
+}
+
+function setRiskDistance(val) {
+  riskDistanceKm = parseInt(val);
+  document.getElementById('risk-dist-label').textContent = val + ' km';
+  computeRisks();
+}
+// End risk engine
 
 </script>
 </body>
