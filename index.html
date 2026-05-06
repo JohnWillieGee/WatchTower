@@ -408,7 +408,16 @@ var sitesVisible = true;
 var MOD_COLOR = {AM:'#f0a500',FM:'#00d4aa',DAB:'#9775fa',DTV:'#4dabf7'};
 var fState = {states:new Set(),mods:new Set(),purposes:new Set(),search:''};
 
-function modColor(sv) {
+function modColor(sv, activeMods) {
+  // If a mod filter is active, colour by the first active mod present at this site
+  if(activeMods && activeMods.size > 0) {
+    var order = ['AM','DAB','FM','DTV'];
+    for(var i=0;i<order.length;i++){
+      if(activeMods.has(order[i]) && sv.some(function(s){return s.mod===order[i];}))
+        return MOD_COLOR[order[i]];
+    }
+  }
+  // Otherwise colour by primary (AM > DAB > FM > DTV)
   var mods = sv.map(function(s){return s.mod;});
   if(mods.indexOf('AM')>=0) return MOD_COLOR.AM;
   if(mods.indexOf('DAB')>=0) return MOD_COLOR.DAB;
@@ -456,7 +465,7 @@ function renderSites() {
   BAI_SITES.forEach(function(s) {
     if(!siteMatchesFilter(s)) return;
     count++;
-    var col=modColor(s.sv), r=5;
+    var col=modColor(s.sv, fState.mods), r=5;
     var mk=L.marker([s.lat,s.lon],{icon:L.divIcon({
       html:"<svg xmlns='http://www.w3.org/2000/svg' width='"+(r*2+4)+"' height='"+(r*2+4)+"'><circle cx='"+(r+2)+"' cy='"+(r+2)+"' r='"+r+"' fill='"+col+"' fill-opacity='.8' stroke='"+(isDark?"#0d1117":"#ffffff")+"' stroke-width='1.5'/></svg>",
       className:"",iconSize:[r*2+4,r*2+4],iconAnchor:[r+2,r+2],popupAnchor:[0,-(r+4)],tooltipAnchor:[r+3,0]
