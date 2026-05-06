@@ -185,12 +185,12 @@ header{background:var(--panel);border-bottom:1px solid var(--border);padding:0 1
 .risk-more{font-size:9px;color:var(--text2);font-style:italic;margin-top:2px;}
 .risk-am-badge{font-size:8px;background:#f0a500;color:#000;border-radius:3px;padding:0 4px;font-weight:700;}
 /* Risk map rings */
-.risk-ring{border-radius:50%;border:2.5px solid;position:absolute;transform:translate(-50%,-50%);pointer-events:none;}
+.risk-ring{border-radius:50%;border:2.5px solid;pointer-events:none;}
 .risk-ring-1{opacity:.7;}
 .risk-ring-2{opacity:.85;}
 .risk-ring-3{opacity:.95;}
 .risk-ring-4{opacity:1;}
-@keyframes riskPulse{0%{transform:translate(-50%,-50%) scale(1);opacity:1;}70%{transform:translate(-50%,-50%) scale(1.8);opacity:.3;}100%{transform:translate(-50%,-50%) scale(1);opacity:1;}}
+@keyframes riskPulse{0%{transform:scale(1);opacity:1;}70%{transform:scale(1.8);opacity:.3;}100%{transform:scale(1);opacity:1;}}
 .risk-pulse{animation:riskPulse 1.6s ease-out infinite;}
 /* Risk alert popup */
 .risk-alert-popup{position:fixed;bottom:24px;right:24px;width:320px;background:var(--panel);border:2px solid;border-radius:10px;padding:14px 16px;z-index:9999;box-shadow:0 8px 32px rgba(0,0,0,.6);font-family:monospace;}
@@ -3071,6 +3071,31 @@ function computeRisks() {
           detail: w.title,
           type: wtype,
           isStormAM: isStormAM
+        });
+      });
+    }
+
+
+    // ── 4. Fire Danger Ratings — district point-in-polygon ───────────────
+    if (typeof FDR_GEO !== 'undefined' && FDR_GEO && fdrRatings) {
+      FDR_GEO.features.forEach(function(feat) {
+        if (!pointInGeoJSONPolygon(site.lat, site.lon, feat.geometry)) return;
+        var aac = feat.properties.AAC;
+        var rating = fdrRatings[aac] && fdrRatings[aac][1]; // period 1 = today
+        if (!rating) return;
+        var fd = (rating.FireDanger || '').toLowerCase();
+        var lvl = RISK_LEVEL.NONE;
+        if (fd.includes('catastrophic'))      lvl = RISK_LEVEL.DIRECT;
+        else if (fd.includes('extreme'))      lvl = RISK_LEVEL.WARNING;
+        else if (fd.includes('very high'))    lvl = RISK_LEVEL.WARNING;
+        else if (fd.includes('high'))         lvl = RISK_LEVEL.ADVISORY;
+        if (lvl === RISK_LEVEL.NONE) return;
+        if (lvl > topLevel) topLevel = lvl;
+        reasons.push({
+          lvl: lvl,
+          src: 'FDR',
+          detail: feat.properties.DIST_NAME + ' — ' + rating.FireDanger + ' (FBI ' + rating.FireBehavIndex + ')',
+          type: 'fdr'
         });
       });
     }
