@@ -2665,6 +2665,16 @@ function isActiveIncident(inc){
   if(inc.state==="QLD"&&(inc.alertLevel||"").toLowerCase()==="information")return false;
   // VIC: exclude small incidents
   if(inc.state==="VIC"&&EXCLUDE_VIC_SIZES.some(function(x){return sz===x;}))return false;
+  // Date validity check — exclude incidents with corrupt/future dates or older than 72 hours
+  if(inc.updated){
+    var updD = parseAUDate(inc.updated);
+    var updMs = updD ? updD.getTime() : NaN;
+    if(!isNaN(updMs)){
+      var ageHours = (Date.now() - updMs) / 3600000;
+      if(ageHours < -1) return false;   // future-dated (allow 1hr clock skew)
+      if(ageHours > 72) return false;   // stale
+    }
+  }
   return true;
 }
 
@@ -2703,7 +2713,7 @@ function renderIncidentsPanel(){
       html+="<div class='inc-state-hdr' style='color:"+stCol+"'>&#9650; "+curSt+" ("+( activeCounts[curSt]||0)+" active)</div>";
     }
     var col=alertColor(inc.alertLevel),ac=alertClass(inc.alertLevel);
-    var updStr=inc.updated?new Date(inc.updated).toLocaleTimeString("en-AU",{hour:"2-digit",minute:"2-digit",hour12:false,timeZone:"Australia/Sydney"})+" AEST":"";
+    var updStr=inc.updated?parseAUDate(inc.updated).toLocaleTimeString("en-AU",{hour:"2-digit",minute:"2-digit",hour12:false,timeZone:"Australia/Sydney"})+" AEST":"";
     var clickable = (inc.lat && inc.lng)
       ? "onclick=\"flyToIncident("+inc.lat+","+inc.lng+")\""
       : "";
@@ -2752,7 +2762,7 @@ function renderIncidentsMap(){
         +(inc.status?"<div class='pu-row'><span class='pu-key'>Status</span><span class='pu-val'>"+inc.status+"</span></div>":"")
         +(inc.size&&inc.size!=="0 ha"?"<div class='pu-row'><span class='pu-key'>Size</span><span class='pu-val'>"+inc.size+"</span></div>":"")
         +(inc.agency?"<div class='pu-row'><span class='pu-key'>Agency</span><span class='pu-val'>"+inc.agency+"</span></div>":"")
-        +(inc.updated?"<div class='pu-row'><span class='pu-key'>Updated</span><span class='pu-val'>"+(function(){try{return new Date(inc.updated).toLocaleString("en-AU",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit",timeZone:"Australia/Sydney",hour12:false})+" AEST";}catch(e){return inc.updated;}})()+"</span></div>":"")
+        +(inc.updated?"<div class='pu-row'><span class='pu-key'>Updated</span><span class='pu-val'>"+(function(){try{var d=parseAUDate(inc.updated);var str=d.toLocaleString("en-AU",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit",timeZone:"Australia/Sydney",hour12:false})+" AEST";var hrs=Math.round((Date.now()-d)/3600000);var ago=isNaN(hrs)?"":(hrs<1?" (just now)":hrs<24?" ("+hrs+"h ago)":" ("+(Math.round(hrs/24))+"d ago)");return str+ago;}catch(e){return inc.updated;}})()+"</span></div>":"")
         +(inc.description?"<div class='pu-row'><span class='pu-key'>Location</span><span class='pu-val'>"+inc.description+"</span></div>":"")
         +(inc.council?"<div class='pu-row'><span class='pu-key'>Council</span><span class='pu-val'>"+inc.council+"</span></div>":"")
         +"<div class='pu-links'><a class='pu-link' href='"+inc.sourceUrl+"' target='_blank' rel='noopener'>&#128680; "+INC_FEEDS[key].label+"</a></div>"
@@ -2963,6 +2973,25 @@ function pointInGeoJSONPolygon(lat, lng, geometry) {
   return false;
 }
 
+// Parse Australian date string "D/MM/YYYY H:MM:SS AM/PM" -> Date object
+function parseAUDate(str) {
+  if (!str) return null;
+  // Try AU format: D/MM/YYYY H:MM:SS AM/PM
+  var m = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2}):(\d{2})\s*(AM|PM)?/i);
+  if (m) {
+    var day=parseInt(m[1]), mon=parseInt(m[2])-1, yr=parseInt(m[3]);
+    var hr=parseInt(m[4]), mn=parseInt(m[5]), sc=parseInt(m[6]);
+    var ampm=(m[7]||'').toUpperCase();
+    if (ampm==='PM' && hr!==12) hr+=12;
+    if (ampm==='AM' && hr===12) hr=0;
+    // Treat as AEST (UTC+10)
+    return new Date(Date.UTC(yr, mon, day, hr-10, mn, sc));
+  }
+  // Fallback to native parse (handles RFC 2822 etc)
+  var d = new Date(str);
+  return isNaN(d) ? null : d;
+}
+
 function haversineKm(lat1, lng1, lat2, lng2) {
   var R = 6371;
   var dLat = (lat2 - lat1) * Math.PI / 180;
@@ -3057,7 +3086,7 @@ function computeRisks() {
 
         var al = (inc.alertLevel || '').toLowerCase();
         var lvl;
-        // Inside polygon or very close = impacted
+        // Inside polygon = always impacted regardless of alert level
         if (inc.polys && inc.polys.length > 0 && inc.polys.some(function(poly) {
               return pointInPolygon(site.lat, site.lon, poly.coordinates[0]);
             })) {
@@ -3066,6 +3095,10 @@ function computeRisks() {
           lvl = RISK_LEVEL.IMPACTED;
         } else if (al.includes('watch') || d < 20) {
           lvl = RISK_LEVEL.DIRECT;
+        } else if (al.includes('advice')) {
+          // Advice-level: only flag as WARNING if very close (<5km already caught above)
+          // Skip entirely for distant Advice incidents — too low level to alert
+          return;
         } else {
           lvl = RISK_LEVEL.WARNING;
         }
