@@ -3182,14 +3182,23 @@ function updateRiskMapMarkers() {
       // Single site — draw individual ring as before
       _drawSiteRing(sites[0], col);
     } else {
-      // Multiple sites — draw one region circle centred on incident
-      // Radius = distance from incident centre to furthest affected site + buffer
+      // Multiple sites — centre circle on midpoint of affected sites (not incident centroid)
+      // This keeps the circle over land where the sites actually are
+      var sumLat = 0, sumLng = 0;
+      sites.forEach(function(r) { sumLat += r.site.lat; sumLng += r.site.lon; });
+      var midLat = sumLat / sites.length;
+      var midLng = sumLng / sites.length;
+
+      // Radius = distance from midpoint to furthest site + buffer
       var maxDist = 0;
       sites.forEach(function(r) {
-        var d = haversineKm(cg.lat, cg.lng, r.site.lat, r.site.lon);
+        var d = haversineKm(midLat, midLng, r.site.lat, r.site.lon);
         if (d > maxDist) maxDist = d;
       });
-      var radiusM = Math.max((maxDist + 15) * 1000, 20000); // min 20km radius
+      var radiusM = Math.max((maxDist + 10) * 1000, 15000); // min 15km radius
+
+      // Override cg.lat/lng for label placement
+      cg.lat = midLat; cg.lng = midLng;
 
       // Build popup listing all sites
       var siteName_clean = function(nm){ return nm.replace(/^\d+\s+/,''); };
