@@ -177,20 +177,24 @@ header{background:var(--panel);border-bottom:1px solid var(--border);padding:0 1
 .risk-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
 .risk-count{font-weight:400;color:var(--text2);}
 .risk-cause-group{margin:0 0 6px;}
-.risk-cause-hdr{padding:4px 14px;background:var(--panel2);font-size:9px;border-top:1px solid var(--border);border-bottom:1px solid var(--border);}
+.risk-cause-hdr{padding:4px 10px 4px 14px;background:var(--panel2);font-size:9px;border-top:1px solid var(--border);border-bottom:1px solid var(--border);cursor:pointer;display:flex;align-items:center;gap:4px;transition:background .15s;}
+.risk-cause-hdr:hover{background:var(--border);}
+.risk-cause-count{margin-left:auto;color:var(--text2);white-space:nowrap;flex-shrink:0;}
+.risk-cause-chevron{margin-left:5px;font-size:8px;color:var(--text2);flex-shrink:0;}
 .risk-src{color:var(--accent2);font-weight:700;}
 .risk-cause-detail{color:var(--text2);}
 .risk-cause-sites{padding:0;}
 .risk-site-row{display:flex;align-items:center;justify-content:space-between;padding:5px 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s;}
 .risk-site-row:hover{background:var(--panel2);}
 .risk-site-left{display:flex;flex-direction:column;gap:1px;min-width:0;}
-.risk-site-nm{font-size:11px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:4px;}
+.risk-site-nm{font-size:11px;font-weight:600;color:var(--text);line-height:1.4;}
 .risk-site-loc{font-size:9px;color:var(--text2);}
 .risk-site-right{font-size:10px;font-weight:700;color:var(--text2);white-space:nowrap;margin-left:8px;flex-shrink:0;}
 .risk-tooltip{background:var(--panel)!important;border:1px solid var(--border)!important;color:var(--text)!important;font-family:monospace!important;font-size:11px!important;font-weight:600!important;padding:2px 7px!important;border-radius:4px!important;box-shadow:0 2px 8px rgba(0,0,0,.4)!important;}
 .risk-tooltip::before{display:none!important;}
 .leaflet-tooltip.risk-tooltip{white-space:nowrap;}
-.risk-am-badge{font-size:8px;background:#f0a500;color:#000;border-radius:3px;padding:1px 4px;font-weight:700;display:inline-block;align-self:center;line-height:1.4;}
+.risk-am-badge{font-size:8px;background:#f0a500;color:#000;border-radius:3px;padding:1px 4px;font-weight:700;display:inline;vertical-align:middle;margin-left:4px;line-height:1;}
+.risk-region-label{background:var(--panel);border:1px solid;border-radius:4px;padding:2px 6px;font-size:9px;font-family:monospace;font-weight:700;white-space:nowrap;pointer-events:none;opacity:.85;}
 /* Risk map rings */
 .risk-ring{border-radius:50%;border:2.5px solid;pointer-events:none;}
 .risk-ring-1{opacity:.7;}
@@ -3001,7 +3005,11 @@ function computeRisks() {
             lvl = RISK_LEVEL.WARNING; label = 'Inside Advice zone';
           }
           if (lvl > topLevel) topLevel = lvl;
-          reasons.push({ lvl: lvl, src: 'NSW RFS', detail: label + ' — ' + (zone.title || zone.areaName || '') });
+          var cLng=0,cLat=0;
+            zone.coords.forEach(function(c){cLng+=c[0];cLat+=c[1];});
+            cLng/=zone.coords.length;cLat/=zone.coords.length;
+            reasons.push({ lvl: lvl, src: 'NSW RFS', detail: label + ' — ' + (zone.title || zone.areaName || ''),
+              lat: cLat, lng: cLng });
         }
       });
     }
@@ -3077,7 +3085,8 @@ function computeRisks() {
           src: 'BOM',
           detail: w.title,
           type: wtype,
-          isStormAM: isStormAM
+          isStormAM: isStormAM,
+          lat: w.coords[0], lng: w.coords[1]
         });
       });
     }
@@ -3098,11 +3107,19 @@ function computeRisks() {
         else if (fd.includes('high'))         lvl = RISK_LEVEL.ADVISORY;
         if (lvl === RISK_LEVEL.NONE) return;
         if (lvl > topLevel) topLevel = lvl;
+        var fCentroid = (function(geom){
+          var lats=0,lngs=0,n=0;
+          var ring = geom.type==='Polygon' ? geom.coordinates[0] :
+                     geom.coordinates[0][0];
+          ring.forEach(function(c){lngs+=c[0];lats+=c[1];n++;});
+          return n ? {lat:lats/n,lng:lngs/n} : {lat:site.lat,lng:site.lon};
+        })(feat.geometry);
         reasons.push({
           lvl: lvl,
           src: 'FDR',
           detail: feat.properties.DIST_NAME + ' — ' + rating.FireDanger + ' (FBI ' + rating.FireBehavIndex + ')',
-          type: 'fdr'
+          type: 'fdr',
+          lat: fCentroid.lat, lng: fCentroid.lng
         });
       });
     }
@@ -3131,63 +3148,160 @@ var riskMarkerLayer = null;
 function updateRiskMapMarkers() {
   if (!riskMarkerLayer) riskMarkerLayer = L.layerGroup().addTo(map);
   riskMarkerLayer.clearLayers();
+  if (!riskResults.length) return;
+
+  // ── Build cause groups (same logic as renderRiskPanel) ──────────────────
+  var causeMap = {}; // causeKey -> {src, detail, topLvl, lat, lng, sites:[{site,level,reasons}]}
 
   riskResults.forEach(function(r) {
-    var col = RISK_COLOR[r.level];
-    var site = r.site;
-    var hasFire = r.reasons.some(function(rs){
-      return rs.src && (rs.src.includes('RFS')||rs.src.includes('QFD')||rs.src.includes('CFS')||
-             rs.src.includes('DFES')||rs.src.includes('EMV')||rs.src.includes('TasALERT')||
-             rs.src.includes('NSW')||rs.src.includes('VIC')||rs.src.includes('QLD')||
-             rs.src.includes('SA')||rs.src.includes('WA')||rs.src.includes('TAS'));
+    r.reasons.forEach(function(rs) {
+      if (!rs.lat && !rs.lng) return; // skip reasons with no location
+      var causeKey = rs.src + '|' + rs.detail.replace(/\s*[—\-]\s*\d+\s*km.*$/,'').substring(0,50);
+      if (!causeMap[causeKey]) {
+        causeMap[causeKey] = {
+          src: rs.src, detail: rs.detail, topLvl: rs.lvl,
+          lat: rs.lat, lng: rs.lng, sites: [], type: rs.type||''
+        };
+      }
+      var cg = causeMap[causeKey];
+      if (rs.lvl > cg.topLvl) cg.topLvl = rs.lvl;
+      // Add site if not already in this cause group
+      if (!cg.sites.some(function(s){ return s.site.name === r.site.name; })) {
+        cg.sites.push(r);
+      }
     });
-    var needsPulse = (hasFire && r.level >= RISK_LEVEL.DIRECT) ||
-      r.level >= RISK_LEVEL.IMPACTED ||
-      (r.level >= RISK_LEVEL.WARNING && r.reasons.some(function(rs) { return rs.isStormAM; }));
-    var size = [32,32,40,48][r.level-1] || 32;
-    var html = '<div class="risk-ring risk-ring-' + r.level + (needsPulse?' risk-pulse':'') + '" ' +
-               'style="width:'+size+'px;height:'+size+'px;border-color:'+col+'"></div>';
-    // Strip leading site ID number from name for display
-    var siteName = site.name.replace(/^\d+\s+/, '');
-    var topReason = r.reasons[0];
-    var popupHtml =
-      "<div style='font-family:monospace;font-size:11px;min-width:180px'>" +
-      "<div style='font-weight:700;font-size:13px;color:var(--text);margin-bottom:4px'>" + siteName + "</div>" +
-      "<div style='margin-bottom:6px'>" +
-        "<span style='background:" + col + ";color:#000;font-weight:700;font-size:9px;padding:1px 5px;border-radius:3px;letter-spacing:.06em'>" +
-        RISK_LABEL[r.level] + "</span>" +
-        (site.state ? "<span style='margin-left:5px;color:var(--text2);font-size:9px'>" + site.state + (site.town ? " &bull; " + site.town : "") + "</span>" : "") +
-      "</div>" +
-      r.reasons.slice(0,3).map(function(rs) {
-        return "<div style='border-top:1px solid var(--border);padding:3px 0;font-size:10px;color:var(--text2)'>" +
-               "<span style='color:" + RISK_COLOR[rs.lvl] + ";font-weight:700'>" + RISK_LABEL[rs.lvl] + "</span>" +
-               " <span style='color:var(--accent2)'>" + rs.src + "</span> &mdash; " +
-               rs.detail.substring(0,55) + (rs.detail.length > 55 ? "&hellip;" : "") +
-               "</div>";
-      }).join('') +
-      (r.reasons.length > 3 ? "<div style='font-size:9px;color:var(--text2);padding-top:3px'>+" + (r.reasons.length-3) + " more</div>" : "") +
-      "</div>";
+  });
 
-    L.marker([site.lat, site.lon], {
-      icon: L.divIcon({
-        html: html,
-        className: '',
-        iconSize: [size, size],
-        iconAnchor: [size/2, size/2]
-      }),
-      zIndexOffset: 500,
-      interactive: true
-    }).bindTooltip(siteName, {
-      permanent: true,
-      direction: 'top',
-      offset: [0, -(size/2 + 4)],
-      className: 'risk-tooltip'
-    }).bindPopup(popupHtml, {
-      className: 'ba-popup risk-popup',
-      maxWidth: 260
-    }).addTo(riskMarkerLayer);
+  // ── For each cause group: draw region circle + impacted individual rings ─
+  Object.keys(causeMap).forEach(function(key) {
+    var cg = causeMap[key];
+    var col = RISK_COLOR[cg.topLvl];
+    var sites = cg.sites;
+
+    if (sites.length === 1) {
+      // Single site — draw individual ring as before
+      _drawSiteRing(sites[0], col);
+    } else {
+      // Multiple sites — draw one region circle centred on incident
+      // Radius = distance from incident centre to furthest affected site + buffer
+      var maxDist = 0;
+      sites.forEach(function(r) {
+        var d = haversineKm(cg.lat, cg.lng, r.site.lat, r.site.lon);
+        if (d > maxDist) maxDist = d;
+      });
+      var radiusM = Math.max((maxDist + 15) * 1000, 20000); // min 20km radius
+
+      // Build popup listing all sites
+      var siteName_clean = function(nm){ return nm.replace(/^\d+\s+/,''); };
+      var popHtml =
+        "<div style='font-family:monospace;font-size:11px'>" +
+        "<div style='font-weight:700;font-size:12px;color:" + col + ";margin-bottom:4px'>" +
+          RISK_LABEL[cg.topLvl] + "</div>" +
+        "<div style='font-weight:600;color:var(--text);margin-bottom:8px'>" +
+          cg.src + " — " + cg.detail.replace(/\s*[—\-]\s*\d+\s*km.*$/,'').substring(0,60) +
+        "</div>" +
+        "<div style='border-top:1px solid var(--border);padding-top:6px;font-size:10px;color:var(--text2)'>" +
+          sites.length + " site" + (sites.length>1?"s":"") + " affected:" +
+        "</div>" +
+        sites.map(function(r) {
+          var sn = siteName_clean(r.site.name);
+          var isAM = siteHasAM(r.site);
+          // find distance for this site from this cause
+          var myReason = r.reasons.find(function(rs){
+            return (rs.src+'|'+rs.detail.replace(/\s*[—\-]\s*\d+\s*km.*$/,'').substring(0,50)) === key;
+          });
+          var dist = myReason && myReason.dist !== undefined ? ' — ' + Math.round(myReason.dist) + ' km' : '';
+          return "<div style='padding:3px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between'>" +
+                 "<span>" + sn + (isAM?"<span style='background:#f0a500;color:#000;font-size:8px;border-radius:3px;padding:0 3px;margin-left:4px;font-weight:700'>AM</span>":"") +
+                 "<span style='color:var(--text2);font-size:9px;margin-left:5px'>" + (r.site.state||'') + (r.site.town?" &bull; "+r.site.town:"") + "</span></span>" +
+                 "<span style='color:var(--text2);font-size:9px;white-space:nowrap;margin-left:8px'>" + dist.replace(' — ','') + "</span>" +
+                 "</div>";
+        }).join('') +
+        "</div>";
+
+      var circle = L.circle([cg.lat, cg.lng], {
+        radius: radiusM,
+        color: col,
+        weight: 2,
+        opacity: 0.7,
+        fillColor: col,
+        fillOpacity: 0.06,
+        dashArray: '6 4',
+        className: 'risk-region-circle'
+      }).bindPopup(popHtml, { className: 'ba-popup risk-popup', maxWidth: 280 })
+        .addTo(riskMarkerLayer);
+
+      // Draw individual pulsing rings only for IMPACTED sites within this group
+      sites.forEach(function(r) {
+        if (r.level >= RISK_LEVEL.IMPACTED) _drawSiteRing(r, RISK_COLOR[r.level]);
+      });
+
+      // Label the circle with source + site count
+      var labelHtml = '<div class="risk-region-label" style="border-color:' + col + ';color:' + col + '">' +
+                      cg.src + ' &bull; ' + sites.length + ' sites</div>';
+      L.marker([cg.lat, cg.lng], {
+        icon: L.divIcon({ html: labelHtml, className: '', iconAnchor: [60, 10] }),
+        interactive: false, zIndexOffset: 400
+      }).addTo(riskMarkerLayer);
+    }
+  });
+
+  // ── Also draw individual rings for sites NOT covered by any multi-site cause ─
+  // (sites whose every reason had no lat/lng, so they weren't in causeMap)
+  var coveredNames = new Set();
+  Object.values(causeMap).forEach(function(cg) {
+    if (cg.sites.length > 1) cg.sites.forEach(function(r){ coveredNames.add(r.site.name); });
+  });
+  riskResults.forEach(function(r) {
+    if (!coveredNames.has(r.site.name)) _drawSiteRing(r, RISK_COLOR[r.level]);
   });
 }
+
+function _drawSiteRing(r, col) {
+  var site = r.site;
+  var hasFire = r.reasons.some(function(rs){
+    return rs.src && (rs.src.includes('RFS')||rs.src.includes('QFD')||rs.src.includes('CFS')||
+           rs.src.includes('DFES')||rs.src.includes('EMV')||rs.src.includes('TasALERT')||
+           rs.src.includes('NSW')||rs.src.includes('VIC')||rs.src.includes('QLD')||
+           rs.src.includes('SA')||rs.src.includes('WA')||rs.src.includes('TAS'));
+  });
+  var needsPulse = (hasFire && r.level >= RISK_LEVEL.DIRECT) ||
+    r.level >= RISK_LEVEL.IMPACTED ||
+    (r.level >= RISK_LEVEL.WARNING && r.reasons.some(function(rs){ return rs.isStormAM; }));
+  var size = [32,32,40,48][r.level-1] || 32;
+  var html = '<div class="risk-ring risk-ring-' + r.level + (needsPulse?' risk-pulse':'') + '" ' +
+             'style="width:'+size+'px;height:'+size+'px;border-color:'+col+'"></div>';
+  var siteName = site.name.replace(/^\d+\s+/, '');
+  var topReason = r.reasons[0];
+  var rightText = topReason.dist !== undefined ? Math.round(topReason.dist)+' km' :
+                  topReason.type==='fdr' ? (topReason.detail.match(/FBI (\d+)/)||['',''])[1] :
+                  topReason.detail.includes('Inside') ? 'Inside' : '';
+  var popupHtml =
+    "<div style='font-family:monospace;font-size:11px;min-width:180px'>" +
+    "<div style='font-weight:700;font-size:13px;color:var(--text);margin-bottom:4px'>" + siteName + "</div>" +
+    "<div style='margin-bottom:6px'>" +
+      "<span style='background:" + col + ";color:#000;font-weight:700;font-size:9px;padding:1px 5px;border-radius:3px'>" +
+      RISK_LABEL[r.level] + "</span>" +
+      (site.state?"<span style='margin-left:5px;color:var(--text2);font-size:9px'>" + site.state + (site.town?" &bull; "+site.town:"") + "</span>":"") +
+    "</div>" +
+    r.reasons.slice(0,3).map(function(rs){
+      return "<div style='border-top:1px solid var(--border);padding:3px 0;font-size:10px;color:var(--text2)'>" +
+             "<span style='color:" + RISK_COLOR[rs.lvl] + ";font-weight:700'>" + RISK_LABEL[rs.lvl] + "</span>" +
+             " <span style='color:var(--accent2)'>" + rs.src + "</span> &mdash; " +
+             rs.detail.substring(0,55) + (rs.detail.length>55?"&hellip;":"") + "</div>";
+    }).join('') +
+    (r.reasons.length>3?"<div style='font-size:9px;color:var(--text2);padding-top:3px'>+"+(r.reasons.length-3)+" more</div>":"") +
+    "</div>";
+
+  L.marker([site.lat, site.lon], {
+    icon: L.divIcon({ html: html, className: '', iconSize:[size,size], iconAnchor:[size/2,size/2] }),
+    zIndexOffset: 500, interactive: true
+  }).bindTooltip(siteName, {
+    permanent: true, direction:'top', offset:[0,-(size/2+4)], className:'risk-tooltip'
+  }).bindPopup(popupHtml, { className:'ba-popup risk-popup', maxWidth:260 })
+    .addTo(riskMarkerLayer);
+}
+
 
 // ── Risk alert popups (fire + storm/AM) ──────────────────────────────────────
 
@@ -3299,7 +3413,6 @@ function renderRiskPanel() {
     return;
   }
 
-  // Group by level, then within each level group sites by their top cause
   var byLevel = {4:[], 3:[], 2:[], 1:[]};
   riskResults.forEach(function(r) { byLevel[r.level].push(r); });
 
@@ -3316,48 +3429,47 @@ function renderRiskPanel() {
             RISK_LABEL[lvl] + ' <span class="risk-count">('+items.length+')</span>' +
             '</div>';
 
-    // Group sites by their primary cause key (src + first 40 chars of detail)
+    // Group by cause
     var causeGroups = {};
     var causeOrder = [];
     items.forEach(function(r) {
       var top = r.reasons[0];
-      // Normalise cause key — strip distances/numbers so nearby incidents group together
-      var causeKey = top.src + '|' + top.detail.replace(/\s*[—\-]\s*\d+\s*km.*$/,'').substring(0, 50);
+      var causeKey = top.src + '|' + top.detail.replace(/\s*[—\-]\s*\d+\s*km.*$/,'').substring(0,50);
       if (!causeGroups[causeKey]) {
-        causeGroups[causeKey] = { src: top.src, detail: top.detail, type: top.type||'', sites: [], lvl: top.lvl };
+        causeGroups[causeKey] = { src: top.src, detail: top.detail, sites: [], lvl: top.lvl };
         causeOrder.push(causeKey);
       }
       causeGroups[causeKey].sites.push(r);
     });
 
-    causeOrder.forEach(function(key) {
+    causeOrder.forEach(function(key, ki) {
       var grp = causeGroups[key];
       var sites = grp.sites;
-      var causeSrc = grp.src;
-      // Clean display detail — strip distance suffix for the group header
       var causeDetail = grp.detail.replace(/\s*[—\-]\s*\d+\s*km.*$/, '').trim();
-      if (causeDetail.length > 55) causeDetail = causeDetail.substring(0,55) + '\u2026';
+      if (causeDetail.length > 52) causeDetail = causeDetail.substring(0,52) + '…';
+      var collapseId = 'rcg-' + lvl + '-' + ki;
+      // Auto-collapse when 3+ sites in a group
+      var startCollapsed = sites.length >= 3;
 
       html += '<div class="risk-cause-group">' +
-              // Cause header spanning full width
-              '<div class="risk-cause-hdr">' +
-              '<span class="risk-src">' + causeSrc + '</span>' +
+              '<div class="risk-cause-hdr" onclick="toggleCauseGroup('' + collapseId + '', this)">' +
+              '<span class="risk-src">' + grp.src + '</span>' +
               ' <span class="risk-cause-detail">' + causeDetail + '</span>' +
+              '<span class="risk-cause-count">' + sites.length + ' site' + (sites.length>1?'s':'') + '</span>' +
+              '<span class="risk-cause-chevron">' + (startCollapsed ? '&#9660;' : '&#9650;') + '</span>' +
               '</div>' +
-              // Site rows — name left, distance/detail right
-              '<div class="risk-cause-sites">';
+              '<div class="risk-cause-sites" id="' + collapseId + '"' +
+              (startCollapsed ? ' style="display:none"' : '') + '>';
 
       sites.forEach(function(r) {
         var site = r.site;
         var isAM = siteHasAM(site);
         var siteName = site.name.replace(/^\d+\s+/, '');
-        // Find this site's specific reason for this cause (has distance)
         var siteReason = r.reasons[0];
         var rightText = '';
         if (siteReason.dist !== undefined) {
           rightText = Math.round(siteReason.dist) + ' km';
         } else if (siteReason.type === 'fdr') {
-          // extract FBI value
           var fbiMatch = siteReason.detail.match(/FBI (\d+)/);
           rightText = fbiMatch ? 'FBI ' + fbiMatch[1] : '';
         } else if (siteReason.detail.includes('Inside')) {
@@ -3366,22 +3478,32 @@ function renderRiskPanel() {
 
         html += '<div class="risk-site-row" onclick="flyToRiskSite('+site.lat+','+site.lon+')">' +
                 '<div class="risk-site-left">' +
-                '<span class="risk-site-nm">' + siteName + '</span>' +
-                (isAM ? '<span class="risk-am-badge">AM</span>' : '') +
-                '<span class="risk-site-loc">' + (site.state||'') + (site.town ? ' &bull; ' + site.town : '') + '</span>' +
+                '<div class="risk-site-nm">' + siteName +
+                (isAM ? '<span class="risk-am-badge">AM</span>' : '') + '</div>' +
+                '<div class="risk-site-loc">' + (site.state||'') + (site.town ? ' &bull; ' + site.town : '') + '</div>' +
                 '</div>' +
                 (rightText ? '<div class="risk-site-right">' + rightText + '</div>' : '') +
                 '</div>';
       });
 
-      html += '</div></div>'; // close risk-cause-sites + risk-cause-group
+      html += '</div></div>';
     });
 
-    html += '</div>'; // close risk-group
+    html += '</div>';
   });
 
   el.innerHTML = html;
 }
+
+function toggleCauseGroup(id, hdr) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  var collapsed = el.style.display === 'none';
+  el.style.display = collapsed ? '' : 'none';
+  var chev = hdr.querySelector('.risk-cause-chevron');
+  if (chev) chev.innerHTML = collapsed ? '&#9650;' : '&#9660;';
+}
+
 
 function toggleRiskPanel() {
   riskPanelOpen = !riskPanelOpen;
