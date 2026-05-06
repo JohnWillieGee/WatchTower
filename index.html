@@ -437,6 +437,14 @@ header{background:var(--panel);border-bottom:1px solid var(--border);padding:0 1
       <div class="li"><div class="ld sq" style="background:#ff2222;opacity:0.5"></div>Emergency Warning</div>
       <div class="li"><div class="ld sq" style="background:#ff8800;opacity:0.5"></div>Watch and Act</div>
       <div class="li"><div class="ld sq" style="background:#ffcc00;opacity:0.5"></div>Advice</div>
+      <hr style="border-color:var(--border);margin:7px 0">
+      <h4>Incidents &amp; Warnings</h4>
+      <div class="li"><span style="font-size:14px;line-height:1">🔥</span>&nbsp;Fire / Incident</div>
+      <div class="li"><span style="font-size:14px;line-height:1">💧</span>&nbsp;Flood / Storm</div>
+      <div class="li"><span style="font-size:14px;line-height:1">🌀</span>&nbsp;Cyclone</div>
+      <div class="li"><span style="font-size:14px;line-height:1">⛈</span>&nbsp;Thunderstorm</div>
+      <div class="li"><span style="font-size:14px;line-height:1">🌬</span>&nbsp;Severe Weather</div>
+      <div class="li"><span style="font-size:14px;line-height:1">🌡</span>&nbsp;Heatwave</div>
     </div>
   </div>
   <!-- Right weather panel -->
@@ -2273,14 +2281,20 @@ function renderWarningsMap() {
     }
 
     // Central marker pin — small dot to give a clickable point + popup anchor
-    var warnMarker = L.circleMarker([lat, lng], {
-      radius:      w.cancelled ? 5 : 7,
-      color:       warnColor,
-      weight:      w.cancelled ? 1.5 : 2,
-      opacity:     w.cancelled ? 0.5 : 1,
-      fillColor:   warnColor,
-      fillOpacity: w.cancelled ? 0.4 : 0.9
-    }).bindPopup(popHtml, { className: 'ba-popup', maxWidth: 340 }).addTo(warningsLayer);
+    // BOM emoji icon from product definition
+      var bomProd = BOM_FTP_PRODUCTS[w.type] || {};
+      var bomEmoji = bomProd.icon || '⚠️';
+      var bomFontSize = w.cancelled ? 14 : 18;
+      var bomBoxSize = bomFontSize + 8;
+      var bomOpacity = w.cancelled ? 0.45 : 1.0;
+      var bomHtml = '<div style="font-size:'+bomFontSize+'px;line-height:1;width:'+bomBoxSize+'px;height:'+bomBoxSize+'px;'+
+                    'display:flex;align-items:center;justify-content:center;opacity:'+bomOpacity+';'+
+                    'filter:drop-shadow(0 1px 3px rgba(0,0,0,.8));"></div>'.replace('></div>', '>'+bomEmoji+'</div>');
+      var warnMarker = L.marker([lat, lng], {
+        icon: L.divIcon({ html:bomHtml, className:'', iconSize:[bomBoxSize,bomBoxSize],
+                          iconAnchor:[bomBoxSize/2,bomBoxSize/2], popupAnchor:[0,-(bomBoxSize/2+4)] }),
+        zIndexOffset: 200
+      }).bindPopup(popHtml, { className: 'ba-popup', maxWidth: 340 }).addTo(warningsLayer);
     warningMarkerRegistry[lat + ',' + lng] = warnMarker;
 
     // Small label — use typeInfo.icon not w.icon
@@ -2752,9 +2766,20 @@ function renderIncidentsMap(){
       });
       // Point marker
       var r=inc.alertLevel&&inc.alertLevel.toLowerCase().includes("emergency")?9:inc.alertLevel&&inc.alertLevel.toLowerCase().includes("watch")?7:6;
+      // Emoji icon based on incident type — fire, flood, other
+      var incType = (inc.type||'').toLowerCase();
+      var incEmoji = incType.includes('flood')||incType.includes('storm') ? '💧' :
+                     incType.includes('earthquake') ? '🌋' :
+                     incType.includes('cyclone')||incType.includes('wind') ? '🌀' :
+                     '🔥'; // default fire
+      var incFontSize = r >= 8 ? 20 : r >= 6 ? 17 : 14;
+      var incBoxSize = incFontSize + 8;
+      var incHtml = '<div style="font-size:'+incFontSize+'px;line-height:1;width:'+incBoxSize+'px;height:'+incBoxSize+'px;'+
+                    'display:flex;align-items:center;justify-content:center;'+
+                    'filter:drop-shadow(0 1px 3px rgba(0,0,0,.8));"></div>'.replace('></div>', '>'+incEmoji+'</div>');
       var incMarker = L.marker([inc.lat,inc.lng],{icon:L.divIcon({
-        html:"<svg xmlns='http://www.w3.org/2000/svg' width='"+(r*2+6)+"' height='"+(r*2+6)+"'><circle cx='"+(r+3)+"' cy='"+(r+3)+"' r='"+r+"' fill='"+color+"' fill-opacity='.85' stroke='"+(isDark?"#1a0a0a":"#ffffff")+"' stroke-width='2'/></svg>",
-        className:"",iconSize:[r*2+6,r*2+6],iconAnchor:[r+3,r+3],popupAnchor:[0,-(r+5)]
+        html: incHtml,
+        className:"",iconSize:[incBoxSize,incBoxSize],iconAnchor:[incBoxSize/2,incBoxSize/2],popupAnchor:[0,-(incBoxSize/2+4)]
       })}).bindPopup(popHtml,{className:"fire-popup",maxWidth:360}).addTo(incidentsLayer);
       incidentMarkerRegistry[inc.lat+','+inc.lng] = incMarker;
     });
