@@ -219,6 +219,15 @@ header{background:var(--panel);border-bottom:1px solid var(--border);padding:0 1
 .risk-fly-btn{flex:1;background:var(--accent2);border:none;color:#000;padding:6px;border-radius:var(--radius);cursor:pointer;font-size:10px;font-weight:700;font-family:monospace;}
 @keyframes riskFlash{0%,100%{opacity:1;}50%{opacity:.3;}}
 .risk-alert-flash{animation:riskFlash .7s ease-in-out infinite;}
+
+.risk-rules-bar{border-top:1px solid var(--border);flex-shrink:0;}
+.risk-rules-hdr{padding:5px 14px;font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text2);cursor:pointer;display:flex;justify-content:space-between;align-items:center;transition:background .15s;}
+.risk-rules-hdr:hover{background:var(--panel2);}
+.risk-rules-body{padding:0 14px 8px;}
+.risk-rule-row{display:flex;justify-content:space-between;align-items:flex-start;padding:4px 0;border-bottom:1px solid var(--border);gap:8px;}
+.risk-rule-lbl{font-size:9px;font-weight:700;color:var(--text2);white-space:nowrap;flex-shrink:0;min-width:90px;}
+.risk-rule-val{font-size:9px;color:var(--text2);text-align:right;line-height:1.4;}
+.risk-rule-val.off{color:var(--text3);text-decoration:line-through;}
 /* h-risk header stat */
 .hstat.risk .val{color:#ff6b3d;}
 #btn-risk-panel{background:var(--panel);border:1px solid var(--border);color:var(--text2);padding:4px 10px;border-radius:var(--radius);cursor:pointer;font-size:10px;font-family:monospace;letter-spacing:.04em;white-space:nowrap;}
@@ -580,7 +589,7 @@ header{background:var(--panel);border-bottom:1px solid var(--border);padding:0 1
       <button class="wp-toggle" onclick="toggleRiskPanel()" title="Close risk panel">&#10005;</button>
     </div>
     <div class="risk-distance-bar">
-      <span>Proximity</span>
+      <span title="Watch &amp; Act radius (Emergency Warning uses 2×)">Proximity</span>
       <input type="range" min="10" max="200" step="5" value="50"
              oninput="setRiskDistance(this.value)">
       <span id="risk-dist-label">50 km</span>
@@ -591,6 +600,38 @@ header{background:var(--panel);border-bottom:1px solid var(--border);padding:0 1
     </div>
     <div id="risk-content">
       <div class="wp-none">Press Refresh or wait for data to load</div>
+    <div class="risk-rules-bar" id="risk-rules-bar">
+      <div class="risk-rules-hdr" onclick="toggleRiskRules()">
+        <span>&#9432; Active Rules</span>
+        <span class="risk-cause-chevron" id="risk-rules-chev">&#9660;</span>
+      </div>
+      <div class="risk-rules-body" id="risk-rules-body" style="display:none">
+        <div class="risk-rule-row">
+          <span class="risk-rule-lbl">Emergency Warning</span>
+          <span class="risk-rule-val" id="rr-emergency">2× slider · always if inside polygon</span>
+        </div>
+        <div class="risk-rule-row">
+          <span class="risk-rule-lbl">Watch &amp; Act</span>
+          <span class="risk-rule-val" id="rr-watch">Slider distance</span>
+        </div>
+        <div class="risk-rule-row">
+          <span class="risk-rule-lbl">Advice</span>
+          <span class="risk-rule-val">5 km hard cap</span>
+        </div>
+        <div class="risk-rule-row">
+          <span class="risk-rule-lbl">FDR</span>
+          <span class="risk-rule-val" id="rr-fdr">High → Advisory · Very High/Extreme → Warning · Catastrophic → Direct</span>
+        </div>
+        <div class="risk-rule-row">
+          <span class="risk-rule-lbl">MF Storms</span>
+          <span class="risk-rule-val" id="rr-storm">Storm/Severe → Warning for AM/MF sites</span>
+        </div>
+        <div class="risk-rule-row" style="border:none">
+          <span class="risk-rule-lbl">Popups</span>
+          <span class="risk-rule-val">Direct Threat and above · fires + MF storms</span>
+        </div>
+      </div>
+    </div>
     </div>
   </div>
 </div>
@@ -3082,19 +3123,24 @@ function computeRisks() {
     ['nsw','vic','qld','sa','wa','tas'].forEach(function(key) {
       (allIncidents[key] || []).filter(isActiveIncident).forEach(function(inc) {
         var d = distToIncidentKm(site, inc);
-        if (d > riskDistanceKm) return;
-
         var al = (inc.alertLevel || '').toLowerCase();
+        var isEmergency = al.includes('emergency');
+        var effectiveRange = isEmergency ? riskDistanceKm * 2 : riskDistanceKm;
+
+        // Inside polygon = always impacted, no distance check needed
+        var insidePoly = inc.polys && inc.polys.length > 0 && inc.polys.some(function(poly) {
+          return pointInPolygon(site.lat, site.lon, poly.coordinates[0]);
+        });
+
+        if (!insidePoly && d > effectiveRange) return;
+
         var lvl;
-        // Inside polygon = always impacted regardless of alert level
-        if (inc.polys && inc.polys.length > 0 && inc.polys.some(function(poly) {
-              return pointInPolygon(site.lat, site.lon, poly.coordinates[0]);
-            })) {
+        if (insidePoly) {
           lvl = RISK_LEVEL.IMPACTED;
-        } else if (al.includes('emergency') || d < 5) {
+        } else if (isEmergency || d < 5) {
           lvl = RISK_LEVEL.IMPACTED;
         } else if (al.includes('advice') && d >= 5) {
-          // Advice-level beyond 5km — not operationally significant, skip
+          // Advice-level beyond 5km — skip
           return;
         } else if (al.includes('watch') || d < 20) {
           lvl = RISK_LEVEL.DIRECT;
@@ -3474,6 +3520,33 @@ function toggleRiskOption(opt, el) {
   computeRisks();
 }
 
+function toggleRiskRules() {
+  var body = document.getElementById('risk-rules-body');
+  var chev = document.getElementById('risk-rules-chev');
+  if (!body) return;
+  var open = body.style.display === 'none';
+  body.style.display = open ? '' : 'none';
+  chev.innerHTML = open ? '&#9650;' : '&#9660;';
+}
+
+function updateRiskRulesDisplay() {
+  // Update rule labels to reflect current toggle state and slider value
+  var emEl = document.getElementById('rr-emergency');
+  var waEl = document.getElementById('rr-watch');
+  var fdrEl = document.getElementById('rr-fdr');
+  var stEl = document.getElementById('rr-storm');
+  if (emEl) emEl.textContent = (riskDistanceKm*2) + ' km · always if inside polygon';
+  if (waEl) waEl.textContent = riskDistanceKm + ' km';
+  if (fdrEl) {
+    fdrEl.className = 'risk-rule-val' + (riskFDREnabled ? '' : ' off');
+    fdrEl.textContent = riskFDREnabled ? 'High → Advisory · Extreme → Warning · Catastrophic → Direct' : 'Disabled';
+  }
+  if (stEl) {
+    stEl.className = 'risk-rule-val' + (riskStormMFEnabled ? '' : ' off');
+    stEl.textContent = riskStormMFEnabled ? 'Storm/Severe → Warning for AM/MF sites' : 'Disabled';
+  }
+}
+
 function toggleRiskPanel() {
   riskPanelOpen = !riskPanelOpen;
   var panel = document.getElementById('risk-panel');
@@ -3492,6 +3565,7 @@ function toggleRiskPanel() {
 function setRiskDistance(val) {
   riskDistanceKm = parseInt(val);
   document.getElementById('risk-dist-label').textContent = val + ' km';
+  updateRiskRulesDisplay();
   computeRisks();
 }
 // End risk engine
