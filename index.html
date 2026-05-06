@@ -3452,7 +3452,7 @@ function renderRiskPanel() {
       var startCollapsed = sites.length >= 3;
 
       html += '<div class="risk-cause-group">' +
-              '<div class="risk-cause-hdr" onclick="toggleCauseGroup('' + collapseId + '', this)">' +
+              '<div class="risk-cause-hdr" onclick="toggleCauseGroup(\'' + collapseId + '\', this)">' +
               '<span class="risk-src">' + grp.src + '</span>' +
               ' <span class="risk-cause-detail">' + causeDetail + '</span>' +
               '<span class="risk-cause-count">' + sites.length + ' site' + (sites.length>1?'s':'') + '</span>' +
