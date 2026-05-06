@@ -495,22 +495,7 @@ header{background:var(--panel);border-bottom:1px solid var(--border);padding:0 1
             <div class="feed-status-row"><div class="feed-dot loading" id="fdot-qld"></div><span class="feed-name">QLD</span><span class="feed-msg" id="fmsg-qld">QFD — via Action...</span><span class="feed-count" id="fcnt-qld"></span></div>
             <div class="feed-status-row"><div class="feed-dot loading" id="fdot-sa"></div><span class="feed-name">SA</span><span class="feed-msg" id="fmsg-sa">CFS — via Action...</span><span class="feed-count" id="fcnt-sa"></span></div>
             <div class="feed-status-row"><div class="feed-dot loading" id="fdot-wa"></div><span class="feed-name">WA</span><span class="feed-msg" id="fmsg-wa">DFES — via Action...</span><span class="feed-count" id="fcnt-wa"></span></div>
-            <div class="feed-status-row"><div class="feed-dot loading" id="fdot-tas"></div><span class="feed-name">TAS</span><span class="feed-msg" id="fmsg-tas">TasALERT — via Action...</span><span class="
-  <div id="risk-panel" class="collapsed">
-    <div class="wp-head">
-      <h3>&#9888; Risk Assessment</h3>
-      <button class="wp-toggle" onclick="toggleRiskPanel()" title="Close risk panel">&#10005;</button>
-    </div>
-    <div class="risk-distance-bar">
-      <span>Proximity</span>
-      <input type="range" min="10" max="200" step="5" value="50"
-             oninput="setRiskDistance(this.value)">
-      <span id="risk-dist-label">50 km</span>
-    </div>
-    <div id="risk-content">
-      <div class="wp-none">Press Refresh or wait for data to load</div>
-    </div>
-  </div>feed-count" id="fcnt-tas"></span></div>
+            <div class="feed-status-row"><div class="feed-dot loading" id="fdot-tas"></div><span class="feed-name">TAS</span><span class="feed-msg" id="fmsg-tas">TasALERT — via Action...</span><span class="feed-count" id="fcnt-tas"></span></div>
           </div>
           <div class="wp-state-tabs">
             <button class="wp-tab on" onclick="showIncState('all')" id="inc-tab-all">All</button>
@@ -564,6 +549,21 @@ header{background:var(--panel);border-bottom:1px solid var(--border);padding:0 1
           </div>
         </div>
       </div>
+    </div>
+  </div>
+  <div id="risk-panel" class="collapsed">
+    <div class="wp-head">
+      <h3>&#9888; Risk Assessment</h3>
+      <button class="wp-toggle" onclick="toggleRiskPanel()" title="Close risk panel">&#10005;</button>
+    </div>
+    <div class="risk-distance-bar">
+      <span>Proximity</span>
+      <input type="range" min="10" max="200" step="5" value="50"
+             oninput="setRiskDistance(this.value)">
+      <span id="risk-dist-label">50 km</span>
+    </div>
+    <div id="risk-content">
+      <div class="wp-none">Press Refresh or wait for data to load</div>
     </div>
   </div>
 </div>
