@@ -3093,12 +3093,11 @@ function computeRisks() {
           lvl = RISK_LEVEL.IMPACTED;
         } else if (al.includes('emergency') || d < 5) {
           lvl = RISK_LEVEL.IMPACTED;
+        } else if (al.includes('advice') && d >= 5) {
+          // Advice-level beyond 5km — not operationally significant, skip
+          return;
         } else if (al.includes('watch') || d < 20) {
           lvl = RISK_LEVEL.DIRECT;
-        } else if (al.includes('advice')) {
-          // Advice-level: only flag as WARNING if very close (<5km already caught above)
-          // Skip entirely for distant Advice incidents — too low level to alert
-          return;
         } else {
           lvl = RISK_LEVEL.WARNING;
         }
