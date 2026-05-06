@@ -131,7 +131,17 @@ header{background:var(--panel);border-bottom:1px solid var(--border);padding:0 1
 .chip.dab.on{background:#9775fa22;color:#9775fa;border-color:#9775fa;}
 .chip.dtv.on{background:#4dabf722;color:#4dabf7;border-color:#4dabf7;}
 .chip.state.on{background:var(--accent);color:#000;border-color:var(--accent);}
-#fs-search,#fs-svcname{width:100%;background:var(--panel2);border:1px solid var(--border);color:var(--text);padding:5px 9px;border-radius:var(--radius);font-family:monospace;font-size:11px;margin-bottom:8px;}#fs-svcname:focus,#fs-svcname option{background:var(--panel2);}
+#fs-search{width:100%;background:var(--panel2);border:1px solid var(--border);color:var(--text);padding:5px 9px;border-radius:var(--radius);font-family:monospace;font-size:11px;margin-bottom:8px;}
+.svc-dd{position:relative;width:100%;margin-bottom:8px;}
+.svc-dd-btn{width:100%;background:var(--panel2);border:1px solid var(--border);color:var(--text);padding:5px 9px;border-radius:var(--radius);font-family:monospace;font-size:11px;text-align:left;cursor:pointer;display:flex;justify-content:space-between;align-items:center;box-sizing:border-box;}
+.svc-dd-btn:hover,.svc-dd-btn.active{border-color:var(--accent);}
+.svc-dd-panel{display:none;position:absolute;top:100%;left:0;right:0;background:var(--panel2);border:1px solid var(--border);border-radius:var(--radius);z-index:2000;max-height:220px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,0.4);}
+.svc-dd-panel.open{display:block;}
+.svc-dd-search{width:100%;background:var(--panel2);border:none;border-bottom:1px solid var(--border);color:var(--text);padding:5px 9px;font-family:monospace;font-size:11px;box-sizing:border-box;outline:none;}
+.svc-dd-item{display:flex;align-items:center;gap:6px;padding:4px 9px;cursor:pointer;font-size:11px;font-family:monospace;}
+.svc-dd-item:hover{background:rgba(255,255,255,0.05);}
+.svc-dd-item input[type=checkbox]{accent-color:var(--accent);cursor:pointer;flex-shrink:0;}
+.svc-dd-item label{cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 #fs-search:focus{outline:none;border-color:var(--accent2);}
 #fs-site-count{font-size:10px;color:var(--text3);margin-bottom:8px;}
 .alert-emergency{background:#ff2222;color:#fff;}.alert-watchact{background:#ff8800;color:#fff;}.alert-advice{background:#ffcc00;color:#000;}.alert-other{background:#555;color:#fff;}
@@ -259,105 +269,112 @@ header{background:var(--panel);border-bottom:1px solid var(--border);padding:0 1
       <div id="fs-site-count"></div>
       <input id="fs-search" type="text" placeholder="Search site name or town..." oninput="applyFilters()">
       <div class="fs-label">Service Name</div>
-      <select id="fs-svcname" onchange="applyFilters()">
-        <option value="">All services</option>
-                <option value="10 pgm">10 pgm</option>
-        <option value="10 pgm (IBL)">10 pgm (IBL)</option>
-        <option value="2RPH">2RPH</option>
-        <option value="2XL">2XL</option>
-        <option value="3BBA">3BBA</option>
-        <option value="3RBA">3RBA</option>
-        <option value="3ZZZ">3ZZZ</option>
-        <option value="6IX">6IX</option>
-        <option value="6PR">6PR</option>
-        <option value="7 pgm">7 pgm</option>
-        <option value="7HHO">7HHO</option>
-        <option value="7Qld">7Qld</option>
-        <option value="9 pgm">9 pgm</option>
-        <option value="96FM">96FM</option>
-        <option value="ABC Classic FM">ABC Classic FM</option>
-        <option value="ABC Digital TV">ABC Digital TV</option>
-        <option value="ABC Local Radio">ABC Local Radio</option>
-        <option value="ABC NEWS on radio">ABC NEWS on radio</option>
-        <option value="ABC Radio National">ABC Radio National</option>
-        <option value="ABC Triple J">ABC Triple J</option>
-        <option value="ARNFM">ARNFM</option>
-        <option value="B105">B105</option>
-        <option value="BTQ Digital">BTQ Digital</option>
-        <option value="C91.3FM">C91.3FM</option>
-        <option value="Canberra Digital Radio">Canberra Digital Radio</option>
-        <option value="Capital Community Radio">Capital Community Radio</option>
-        <option value="Community Digital TV">Community Digital TV</option>
-        <option value="DAB 9A">DAB 9A</option>
-        <option value="DAB 9B">DAB 9B</option>
-        <option value="Digital Radio Broadcasting Darwin">Digital Radio Broadcasting Darwin</option>
-        <option value="Digital Radio Broadcasting Hobart">Digital Radio Broadcasting Hobart</option>
-        <option value="First Nations TV">First Nations TV</option>
-        <option value="GWN Digital TV">GWN Digital TV</option>
-        <option value="Gladstone DCBA (Rhema)">Gladstone DCBA (Rhema)</option>
-        <option value="Goolarri Media">Goolarri Media</option>
-        <option value="HIT 104.7">HIT 104.7</option>
-        <option value="HIT FM">HIT FM</option>
-        <option value="JV 10 pgm">JV 10 pgm</option>
-        <option value="JV 10 pgm (PIE ONLY)">JV 10 pgm (PIE ONLY)</option>
-        <option value="Kix Country">Kix Country</option>
-        <option value="MIX 106.3">MIX 106.3</option>
-        <option value="MIX FM">MIX FM</option>
-        <option value="Mix 96.7 (ARN)">Mix 96.7 (ARN)</option>
-        <option value="NBN Digital">NBN Digital</option>
-        <option value="NBN Digital TV">NBN Digital TV</option>
-        <option value="NBN Digital TV - directional">NBN Digital TV - directional</option>
-        <option value="NDAB(ABC Regionals)">NDAB(ABC Regionals)</option>
-        <option value="NDAB(Metro)">NDAB(Metro)</option>
-        <option value="NDAB(SBS Regionals)">NDAB(SBS Regionals)</option>
-        <option value="NSWTAB">NSWTAB</option>
-        <option value="NT TAB">NT TAB</option>
-        <option value="Nine Digital TV">Nine Digital TV</option>
-        <option value="Noise FM (Works)">Noise FM (Works)</option>
-        <option value="Nova 100">Nova 100</option>
-        <option value="Nova 937">Nova 937</option>
-        <option value="Nova FM">Nova FM</option>
-        <option value="QTQ Digital">QTQ Digital</option>
-        <option value="Radio For Print Handicapped">Radio For Print Handicapped</option>
-        <option value="SA FM">SA FM</option>
-        <option value="SA TAB">SA TAB</option>
-        <option value="SBS Digital TV">SBS Digital TV</option>
-        <option value="SBS Radio">SBS Radio</option>
-        <option value="SEA FM">SEA FM</option>
-        <option value="SEN Brisbane">SEN Brisbane</option>
-        <option value="SEN Darwin">SEN Darwin</option>
-        <option value="SEN Hobart">SEN Hobart</option>
-        <option value="SEN Margaret River">SEN Margaret River</option>
-        <option value="SEN Spirit">SEN Spirit</option>
-        <option value="SEN Toowoomba">SEN Toowoomba</option>
-        <option value="SEN Wollongong">SEN Wollongong</option>
-        <option value="SENTrack">SENTrack</option>
-        <option value="SKI FM">SKI FM</option>
-        <option value="STQ Digital">STQ Digital</option>
-        <option value="Seven Digital TV">Seven Digital TV</option>
-        <option value="Smooth 91.5">Smooth 91.5</option>
-        <option value="Smooth FM 95.3">Smooth FM 95.3</option>
-        <option value="Sport 927">Sport 927</option>
-        <option value="Star FM">Star FM</option>
-        <option value="TVQ Digital">TVQ Digital</option>
-        <option value="Tabcorp">Tabcorp</option>
-        <option value="TasRadio">TasRadio</option>
-        <option value="Tasmanian Digital TV">Tasmanian Digital TV</option>
-        <option value="Ten Digital TV">Ten Digital TV</option>
-        <option value="Ten West Digital TV">Ten West Digital TV</option>
-        <option value="Tjuma Pulka FM">Tjuma Pulka FM</option>
-        <option value="Triple M">Triple M</option>
-        <option value="Triple U">Triple U</option>
-        <option value="UBET QLD">UBET QLD</option>
-        <option value="Vision Australia Radio">Vision Australia Radio</option>
-        <option value="WATAB">WATAB</option>
-        <option value="WIN Digital TV">WIN Digital TV</option>
-        <option value="WIN Digital TV (7-10)">WIN Digital TV (7-10)</option>
-        <option value="WIN Digital TV (9)">WIN Digital TV (9)</option>
-        <option value="WIN Digital TV (IBL)">WIN Digital TV (IBL)</option>
-        <option value="Waringarri Aboriginal Radio">Waringarri Aboriginal Radio</option>
-        <option value="i98FM">i98FM</option>
-      </select>
+      <div class="svc-dd" id="svc-dd-wrap">
+        <button class="svc-dd-btn" id="svc-dd-btn" onclick="toggleSvcDropdown(event)" type="button">
+          <span id="svc-dd-label">All services</span><span>&#9660;</span>
+        </button>
+        <div class="svc-dd-panel" id="svc-dd-panel">
+          <input class="svc-dd-search" type="text" placeholder="Filter services..." oninput="filterSvcList(this.value)" id="svc-dd-search">
+          <div id="svc-dd-items">
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-10 pgm" value="10 pgm" onchange="svcCheckChange()"><label for="svc-cb-10 pgm">10 pgm</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-10 pgm (IBL)" value="10 pgm (IBL)" onchange="svcCheckChange()"><label for="svc-cb-10 pgm (IBL)">10 pgm (IBL)</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-2RPH" value="2RPH" onchange="svcCheckChange()"><label for="svc-cb-2RPH">2RPH</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-2XL" value="2XL" onchange="svcCheckChange()"><label for="svc-cb-2XL">2XL</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-3BBA" value="3BBA" onchange="svcCheckChange()"><label for="svc-cb-3BBA">3BBA</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-3RBA" value="3RBA" onchange="svcCheckChange()"><label for="svc-cb-3RBA">3RBA</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-3ZZZ" value="3ZZZ" onchange="svcCheckChange()"><label for="svc-cb-3ZZZ">3ZZZ</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-6IX" value="6IX" onchange="svcCheckChange()"><label for="svc-cb-6IX">6IX</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-6PR" value="6PR" onchange="svcCheckChange()"><label for="svc-cb-6PR">6PR</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-7 pgm" value="7 pgm" onchange="svcCheckChange()"><label for="svc-cb-7 pgm">7 pgm</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-7HHO" value="7HHO" onchange="svcCheckChange()"><label for="svc-cb-7HHO">7HHO</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-7Qld" value="7Qld" onchange="svcCheckChange()"><label for="svc-cb-7Qld">7Qld</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-9 pgm" value="9 pgm" onchange="svcCheckChange()"><label for="svc-cb-9 pgm">9 pgm</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-96FM" value="96FM" onchange="svcCheckChange()"><label for="svc-cb-96FM">96FM</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-ABC Classic FM" value="ABC Classic FM" onchange="svcCheckChange()"><label for="svc-cb-ABC Classic FM">ABC Classic FM</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-ABC Digital TV" value="ABC Digital TV" onchange="svcCheckChange()"><label for="svc-cb-ABC Digital TV">ABC Digital TV</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-ABC Local Radio" value="ABC Local Radio" onchange="svcCheckChange()"><label for="svc-cb-ABC Local Radio">ABC Local Radio</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-ABC NEWS on radio" value="ABC NEWS on radio" onchange="svcCheckChange()"><label for="svc-cb-ABC NEWS on radio">ABC NEWS on radio</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-ABC Radio National" value="ABC Radio National" onchange="svcCheckChange()"><label for="svc-cb-ABC Radio National">ABC Radio National</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-ABC Triple J" value="ABC Triple J" onchange="svcCheckChange()"><label for="svc-cb-ABC Triple J">ABC Triple J</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-ARNFM" value="ARNFM" onchange="svcCheckChange()"><label for="svc-cb-ARNFM">ARNFM</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-B105" value="B105" onchange="svcCheckChange()"><label for="svc-cb-B105">B105</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-BTQ Digital" value="BTQ Digital" onchange="svcCheckChange()"><label for="svc-cb-BTQ Digital">BTQ Digital</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-C91.3FM" value="C91.3FM" onchange="svcCheckChange()"><label for="svc-cb-C91.3FM">C91.3FM</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-Canberra Digital Radio" value="Canberra Digital Radio" onchange="svcCheckChange()"><label for="svc-cb-Canberra Digital Radio">Canberra Digital Radio</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-Capital Community Radio" value="Capital Community Radio" onchange="svcCheckChange()"><label for="svc-cb-Capital Community Radio">Capital Community Radio</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-Community Digital TV" value="Community Digital TV" onchange="svcCheckChange()"><label for="svc-cb-Community Digital TV">Community Digital TV</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-DAB 9A" value="DAB 9A" onchange="svcCheckChange()"><label for="svc-cb-DAB 9A">DAB 9A</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-DAB 9B" value="DAB 9B" onchange="svcCheckChange()"><label for="svc-cb-DAB 9B">DAB 9B</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-Digital Radio Broadcasting Darwin" value="Digital Radio Broadcasting Darwin" onchange="svcCheckChange()"><label for="svc-cb-Digital Radio Broadcasting Darwin">Digital Radio Broadcasting Darwin</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-Digital Radio Broadcasting Hobart" value="Digital Radio Broadcasting Hobart" onchange="svcCheckChange()"><label for="svc-cb-Digital Radio Broadcasting Hobart">Digital Radio Broadcasting Hobart</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-First Nations TV" value="First Nations TV" onchange="svcCheckChange()"><label for="svc-cb-First Nations TV">First Nations TV</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-GWN Digital TV" value="GWN Digital TV" onchange="svcCheckChange()"><label for="svc-cb-GWN Digital TV">GWN Digital TV</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-Gladstone DCBA (Rhema)" value="Gladstone DCBA (Rhema)" onchange="svcCheckChange()"><label for="svc-cb-Gladstone DCBA (Rhema)">Gladstone DCBA (Rhema)</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-Goolarri Media" value="Goolarri Media" onchange="svcCheckChange()"><label for="svc-cb-Goolarri Media">Goolarri Media</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-HIT 104.7" value="HIT 104.7" onchange="svcCheckChange()"><label for="svc-cb-HIT 104.7">HIT 104.7</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-HIT FM" value="HIT FM" onchange="svcCheckChange()"><label for="svc-cb-HIT FM">HIT FM</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-JV 10 pgm" value="JV 10 pgm" onchange="svcCheckChange()"><label for="svc-cb-JV 10 pgm">JV 10 pgm</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-JV 10 pgm (PIE ONLY)" value="JV 10 pgm (PIE ONLY)" onchange="svcCheckChange()"><label for="svc-cb-JV 10 pgm (PIE ONLY)">JV 10 pgm (PIE ONLY)</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-Kix Country" value="Kix Country" onchange="svcCheckChange()"><label for="svc-cb-Kix Country">Kix Country</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-MIX 106.3" value="MIX 106.3" onchange="svcCheckChange()"><label for="svc-cb-MIX 106.3">MIX 106.3</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-MIX FM" value="MIX FM" onchange="svcCheckChange()"><label for="svc-cb-MIX FM">MIX FM</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-Mix 96.7 (ARN)" value="Mix 96.7 (ARN)" onchange="svcCheckChange()"><label for="svc-cb-Mix 96.7 (ARN)">Mix 96.7 (ARN)</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-NBN Digital" value="NBN Digital" onchange="svcCheckChange()"><label for="svc-cb-NBN Digital">NBN Digital</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-NBN Digital TV" value="NBN Digital TV" onchange="svcCheckChange()"><label for="svc-cb-NBN Digital TV">NBN Digital TV</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-NBN Digital TV - directional" value="NBN Digital TV - directional" onchange="svcCheckChange()"><label for="svc-cb-NBN Digital TV - directional">NBN Digital TV - directional</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-NDAB(ABC Regionals)" value="NDAB(ABC Regionals)" onchange="svcCheckChange()"><label for="svc-cb-NDAB(ABC Regionals)">NDAB(ABC Regionals)</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-NDAB(Metro)" value="NDAB(Metro)" onchange="svcCheckChange()"><label for="svc-cb-NDAB(Metro)">NDAB(Metro)</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-NDAB(SBS Regionals)" value="NDAB(SBS Regionals)" onchange="svcCheckChange()"><label for="svc-cb-NDAB(SBS Regionals)">NDAB(SBS Regionals)</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-NSWTAB" value="NSWTAB" onchange="svcCheckChange()"><label for="svc-cb-NSWTAB">NSWTAB</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-NT TAB" value="NT TAB" onchange="svcCheckChange()"><label for="svc-cb-NT TAB">NT TAB</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-Nine Digital TV" value="Nine Digital TV" onchange="svcCheckChange()"><label for="svc-cb-Nine Digital TV">Nine Digital TV</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-Noise FM (Works)" value="Noise FM (Works)" onchange="svcCheckChange()"><label for="svc-cb-Noise FM (Works)">Noise FM (Works)</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-Nova 100" value="Nova 100" onchange="svcCheckChange()"><label for="svc-cb-Nova 100">Nova 100</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-Nova 937" value="Nova 937" onchange="svcCheckChange()"><label for="svc-cb-Nova 937">Nova 937</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-Nova FM" value="Nova FM" onchange="svcCheckChange()"><label for="svc-cb-Nova FM">Nova FM</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-QTQ Digital" value="QTQ Digital" onchange="svcCheckChange()"><label for="svc-cb-QTQ Digital">QTQ Digital</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-Radio For Print Handicapped" value="Radio For Print Handicapped" onchange="svcCheckChange()"><label for="svc-cb-Radio For Print Handicapped">Radio For Print Handicapped</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-SA FM" value="SA FM" onchange="svcCheckChange()"><label for="svc-cb-SA FM">SA FM</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-SA TAB" value="SA TAB" onchange="svcCheckChange()"><label for="svc-cb-SA TAB">SA TAB</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-SBS Digital TV" value="SBS Digital TV" onchange="svcCheckChange()"><label for="svc-cb-SBS Digital TV">SBS Digital TV</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-SBS Radio" value="SBS Radio" onchange="svcCheckChange()"><label for="svc-cb-SBS Radio">SBS Radio</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-SEA FM" value="SEA FM" onchange="svcCheckChange()"><label for="svc-cb-SEA FM">SEA FM</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-SEN Brisbane" value="SEN Brisbane" onchange="svcCheckChange()"><label for="svc-cb-SEN Brisbane">SEN Brisbane</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-SEN Darwin" value="SEN Darwin" onchange="svcCheckChange()"><label for="svc-cb-SEN Darwin">SEN Darwin</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-SEN Hobart" value="SEN Hobart" onchange="svcCheckChange()"><label for="svc-cb-SEN Hobart">SEN Hobart</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-SEN Margaret River" value="SEN Margaret River" onchange="svcCheckChange()"><label for="svc-cb-SEN Margaret River">SEN Margaret River</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-SEN Spirit" value="SEN Spirit" onchange="svcCheckChange()"><label for="svc-cb-SEN Spirit">SEN Spirit</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-SEN Toowoomba" value="SEN Toowoomba" onchange="svcCheckChange()"><label for="svc-cb-SEN Toowoomba">SEN Toowoomba</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-SEN Wollongong" value="SEN Wollongong" onchange="svcCheckChange()"><label for="svc-cb-SEN Wollongong">SEN Wollongong</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-SENTrack" value="SENTrack" onchange="svcCheckChange()"><label for="svc-cb-SENTrack">SENTrack</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-SKI FM" value="SKI FM" onchange="svcCheckChange()"><label for="svc-cb-SKI FM">SKI FM</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-STQ Digital" value="STQ Digital" onchange="svcCheckChange()"><label for="svc-cb-STQ Digital">STQ Digital</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-Seven Digital TV" value="Seven Digital TV" onchange="svcCheckChange()"><label for="svc-cb-Seven Digital TV">Seven Digital TV</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-Smooth 91.5" value="Smooth 91.5" onchange="svcCheckChange()"><label for="svc-cb-Smooth 91.5">Smooth 91.5</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-Smooth FM 95.3" value="Smooth FM 95.3" onchange="svcCheckChange()"><label for="svc-cb-Smooth FM 95.3">Smooth FM 95.3</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-Sport 927" value="Sport 927" onchange="svcCheckChange()"><label for="svc-cb-Sport 927">Sport 927</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-Star FM" value="Star FM" onchange="svcCheckChange()"><label for="svc-cb-Star FM">Star FM</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-TVQ Digital" value="TVQ Digital" onchange="svcCheckChange()"><label for="svc-cb-TVQ Digital">TVQ Digital</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-Tabcorp" value="Tabcorp" onchange="svcCheckChange()"><label for="svc-cb-Tabcorp">Tabcorp</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-TasRadio" value="TasRadio" onchange="svcCheckChange()"><label for="svc-cb-TasRadio">TasRadio</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-Tasmanian Digital TV" value="Tasmanian Digital TV" onchange="svcCheckChange()"><label for="svc-cb-Tasmanian Digital TV">Tasmanian Digital TV</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-Ten Digital TV" value="Ten Digital TV" onchange="svcCheckChange()"><label for="svc-cb-Ten Digital TV">Ten Digital TV</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-Ten West Digital TV" value="Ten West Digital TV" onchange="svcCheckChange()"><label for="svc-cb-Ten West Digital TV">Ten West Digital TV</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-Tjuma Pulka FM" value="Tjuma Pulka FM" onchange="svcCheckChange()"><label for="svc-cb-Tjuma Pulka FM">Tjuma Pulka FM</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-Triple M" value="Triple M" onchange="svcCheckChange()"><label for="svc-cb-Triple M">Triple M</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-Triple U" value="Triple U" onchange="svcCheckChange()"><label for="svc-cb-Triple U">Triple U</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-UBET QLD" value="UBET QLD" onchange="svcCheckChange()"><label for="svc-cb-UBET QLD">UBET QLD</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-Vision Australia Radio" value="Vision Australia Radio" onchange="svcCheckChange()"><label for="svc-cb-Vision Australia Radio">Vision Australia Radio</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-WATAB" value="WATAB" onchange="svcCheckChange()"><label for="svc-cb-WATAB">WATAB</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-WIN Digital TV" value="WIN Digital TV" onchange="svcCheckChange()"><label for="svc-cb-WIN Digital TV">WIN Digital TV</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-WIN Digital TV (7-10)" value="WIN Digital TV (7-10)" onchange="svcCheckChange()"><label for="svc-cb-WIN Digital TV (7-10)">WIN Digital TV (7-10)</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-WIN Digital TV (9)" value="WIN Digital TV (9)" onchange="svcCheckChange()"><label for="svc-cb-WIN Digital TV (9)">WIN Digital TV (9)</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-WIN Digital TV (IBL)" value="WIN Digital TV (IBL)" onchange="svcCheckChange()"><label for="svc-cb-WIN Digital TV (IBL)">WIN Digital TV (IBL)</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-Waringarri Aboriginal Radio" value="Waringarri Aboriginal Radio" onchange="svcCheckChange()"><label for="svc-cb-Waringarri Aboriginal Radio">Waringarri Aboriginal Radio</label></div>
+          <div class="svc-dd-item"><input type="checkbox" id="svc-cb-i98FM" value="i98FM" onchange="svcCheckChange()"><label for="svc-cb-i98FM">i98FM</label></div>
+          </div>
+        </div>
+      </div>
       <div class="fs-label">Broadcaster</div>
       <div class="fs-chips">
         <span class="chip state" data-v="ABC" data-g="broadcaster" onclick="toggleChip(this,'broadcaster')">ABC</span>
@@ -622,7 +639,7 @@ header{background:var(--panel);border-bottom:1px solid var(--border);padding:0 1
         </div>
         <div class="risk-rule-row">
           <span class="risk-rule-lbl">FDR</span>
-          <span class="risk-rule-val" id="rr-fdr">High → Advisory · Very High/Extreme → Warning · Catastrophic → Direct</span>
+          <span class="risk-rule-val" id="rr-fdr">Extreme/Very High → Warning · Catastrophic → Direct</span>
         </div>
         <div class="risk-rule-row">
           <span class="risk-rule-lbl">MF Storms</span>
@@ -651,7 +668,7 @@ var siteMarkers = [];
 var sitesLayer = null;
 var sitesVisible = true;
 var MOD_COLOR = {AM:'#f0a500',FM:'#00d4aa',DAB:'#9775fa',DTV:'#4dabf7'};
-var fState = {states:new Set(),mods:new Set(),purposes:new Set(),broadcasters:new Set(),svcName:'',search:''};
+var fState = {states:new Set(),mods:new Set(),purposes:new Set(),broadcasters:new Set(),svcNames:new Set(),search:''};
 
 function modColor(sv, activeMods) {
   // If a mod filter is active, colour by the first active mod present at this site
@@ -697,7 +714,7 @@ function siteMatchesFilter(s) {
   if(fState.mods.size>0 && !s.sv.some(function(sv){return fState.mods.has(sv.mod);})) return false;
   if(fState.purposes.size>0 && !s.sv.some(function(sv){return fState.purposes.has(sv.purpose);})) return false;
   if(fState.broadcasters.size>0 && !s.broadcasters.some(function(b){return fState.broadcasters.has(b);})) return false;
-  if(fState.svcName && (s.bai_svc_names||[]).indexOf(fState.svcName)<0) return false;
+  if(fState.svcNames.size>0 && !(s.bai_svc_names||[]).some(function(n){return fState.svcNames.has(n);})) return false;
   if(fState.search) {
     var q=fState.search.toLowerCase();
     if(s.name.toLowerCase().indexOf(q)<0 && (s.town||'').toLowerCase().indexOf(q)<0) return false;
@@ -725,6 +742,7 @@ function renderSites() {
   document.getElementById('h-sites').textContent=count;
   var el=document.getElementById('fs-site-count');
   if(el) el.textContent=count+' of '+BAI_SITES.length+' sites shown';
+  if(riskPanelOpen) computeRisks();
 }
 
 function toggleSitesLayer() {
@@ -744,18 +762,58 @@ function toggleChip(el,group) {
   applyFilters();
 }
 
+
+// ── SERVICE MULTI-SELECT DROPDOWN ──
+function toggleSvcDropdown(e){
+  e.stopPropagation();
+  var panel=document.getElementById('svc-dd-panel');
+  var btn=document.getElementById('svc-dd-btn');
+  var open=panel.classList.toggle('open');
+  btn.classList.toggle('active',open);
+  if(open){
+    var si=document.getElementById('svc-dd-search');
+    if(si){si.value='';filterSvcList('');}
+    setTimeout(function(){if(si)si.focus();},50);
+  }
+}
+function filterSvcList(q){
+  var lq=(q||'').toLowerCase();
+  document.querySelectorAll('#svc-dd-items .svc-dd-item').forEach(function(el){
+    el.style.display=(!lq||el.textContent.toLowerCase().includes(lq))?'':'none';
+  });
+}
+function svcCheckChange(){
+  updateSvcBtnLabel();
+  applyFilters();
+}
+function updateSvcBtnLabel(){
+  var checked=document.querySelectorAll('#svc-dd-items input[type=checkbox]:checked');
+  var lbl=document.getElementById('svc-dd-label');
+  if(!lbl)return;
+  if(checked.length===0) lbl.textContent='All services';
+  else if(checked.length===1) lbl.textContent=checked[0].value;
+  else lbl.textContent=checked.length+' services selected';
+}
+document.addEventListener('click',function(e){
+  var wrap=document.getElementById('svc-dd-wrap');
+  if(wrap&&!wrap.contains(e.target)){
+    document.getElementById('svc-dd-panel').classList.remove('open');
+    document.getElementById('svc-dd-btn').classList.remove('active');
+  }
+});
+
 function applyFilters() {
   fState.search=(document.getElementById('fs-search').value||'').trim();
-  var svcEl=document.getElementById('fs-svcname');
-  fState.svcName=svcEl?svcEl.value:'';
+  fState.svcNames=new Set();
+  document.querySelectorAll('#svc-dd-items input[type=checkbox]:checked').forEach(function(cb){fState.svcNames.add(cb.value);});
   renderSites();
 }
 
 function clearFilters() {
-  fState={states:new Set(),mods:new Set(),purposes:new Set(),broadcasters:new Set(),svcName:'',search:''};
+  fState={states:new Set(),mods:new Set(),purposes:new Set(),broadcasters:new Set(),svcNames:new Set(),search:''};
   document.getElementById('fs-search').value='';
-  var svcEl=document.getElementById('fs-svcname');
-  if(svcEl) svcEl.value='';
+  document.querySelectorAll('#svc-dd-items input[type=checkbox]:checked').forEach(function(cb){cb.checked=false;});
+  updateSvcBtnLabel();
   document.querySelectorAll('.chip.on').forEach(function(c){c.classList.remove('on');});
   renderSites();
 }
@@ -3091,7 +3149,8 @@ function computeRisks() {
   if (!BAI_SITES || !BAI_SITES.length) return;
   riskResults = [];
 
-  BAI_SITES.forEach(function(site) {
+  var sitesToAssess = BAI_SITES.filter(function(s){ return siteMatchesFilter(s); });
+  sitesToAssess.forEach(function(site) {
     var topLevel = RISK_LEVEL.NONE;
     var reasons = [];
     var isAM = siteHasAM(site);
@@ -3219,7 +3278,6 @@ function computeRisks() {
         if (fd.includes('catastrophic'))      lvl = RISK_LEVEL.DIRECT;
         else if (fd.includes('extreme'))      lvl = RISK_LEVEL.WARNING;
         else if (fd.includes('very high'))    lvl = RISK_LEVEL.WARNING;
-        else if (fd.includes('high'))         lvl = RISK_LEVEL.ADVISORY;
         if (lvl === RISK_LEVEL.NONE) return;
         if (lvl > topLevel) topLevel = lvl;
         var fCentroid = (function(geom){
@@ -3541,7 +3599,7 @@ function updateRiskRulesDisplay() {
   if (waEl) waEl.textContent = riskDistanceKm + ' km';
   if (fdrEl) {
     fdrEl.className = 'risk-rule-val' + (riskFDREnabled ? '' : ' off');
-    fdrEl.textContent = riskFDREnabled ? 'High → Advisory · Extreme → Warning · Catastrophic → Direct' : 'Disabled';
+    fdrEl.textContent = riskFDREnabled ? 'Extreme/Very High → Warning · Catastrophic → Direct' : 'Disabled';
   }
   if (stEl) {
     stEl.className = 'risk-rule-val' + (riskStormMFEnabled ? '' : ' off');
