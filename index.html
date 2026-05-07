@@ -3245,9 +3245,12 @@ function computeRisks() {
           lvl = RISK_LEVEL.WARNING;
         } else if (wtype === 'cyclone') {
           lvl = RISK_LEVEL.DIRECT;
-        } else if (wtype === 'thunderstorm' || wtype === 'severe_weather') {
-          // All sites get ADVISORY; AM/MF sites get WARNING
+        } else if (wtype === 'thunderstorm') {
+          // Thunderstorm only: AM/MF sites get WARNING, others ADVISORY
           lvl = (riskStormMFEnabled && isAM) ? RISK_LEVEL.WARNING : RISK_LEVEL.ADVISORY;
+        } else if (wtype === 'severe_weather') {
+          // Severe weather: ADVISORY only — does not elevate for AM/MF sites
+          lvl = RISK_LEVEL.ADVISORY;
         } else if (wtype === 'heatwave') {
           lvl = RISK_LEVEL.ADVISORY;
         }
@@ -3256,7 +3259,7 @@ function computeRisks() {
         if (!inDistrict && distToWarn > 300) return;
 
         if (lvl > topLevel) topLevel = lvl;
-        var isStormAM = isAM && (wtype === 'thunderstorm' || wtype === 'severe_weather');
+        var isStormAM = isAM && wtype === 'thunderstorm'; // only thunderstorm triggers MF alert popup
         reasons.push({
           lvl: lvl,
           src: 'BOM',
@@ -3404,7 +3407,8 @@ function checkRiskAlerts() {
     }
 
     if (!needsAlert) return;
-    var ackKey = site.name + '|' + r.level + '|' + alertReasons[0].detail;
+    // Use a stable key: site + level + warning type (not full title which can change)
+    var ackKey = site.name + '|' + r.level + '|' + (alertReasons[0].type || '') + '|' + (alertReasons[0].detail || '').substring(0, 40);
     if (riskAcknowledged.has(ackKey)) return;
 
     riskAlertQueue.push({ site: site, level: r.level, reasons: alertReasons, ackKey: ackKey });
@@ -3443,20 +3447,26 @@ function showNextRiskAlert() {
     '<div class="risk-alert-state">' + (item.site.state||'') + (item.site.town?' &bull; '+item.site.town:'') + '</div>' +
     '<div class="risk-alert-reasons">' + reasonHtml + '</div>' +
     '<div class="risk-alert-actions">' +
-      '<button class="risk-ack-btn" onclick="acknowledgeRiskAlert(\''+item.ackKey+'\')">Acknowledge</button>' +
+      '<button class="risk-ack-btn" onclick="acknowledgeRiskAlert(this)">Acknowledge</button>' +
       '<button class="risk-fly-btn" onclick="flyToRiskSite('+item.site.lat+','+item.site.lon+')">Go to site</button>' +
     '</div>' +
   '</div>';
 
   var existing = document.getElementById('risk-alert-popup');
   if (existing) existing.remove();
-  document.body.insertAdjacentHTML('beforeend', html);
+  // Build via DOM so we can attach ackKey as a property (avoids apostrophe/quote issues in onclick)
+  var tmp = document.createElement('div');
+  tmp.innerHTML = html;
+  var popup = tmp.firstChild;
+  popup._ackKey = item.ackKey;
+  document.body.appendChild(popup);
 }
 
-function acknowledgeRiskAlert(key) {
-  riskAcknowledged.add(key);
-  var el = document.getElementById('risk-alert-popup');
-  if (el) el.remove();
+function acknowledgeRiskAlert(btnEl) {
+  var popup = document.getElementById('risk-alert-popup');
+  var key = popup ? popup._ackKey : null;
+  if (key) riskAcknowledged.add(key);
+  if (popup) popup.remove();
   riskAlertActive = false;
   setTimeout(showNextRiskAlert, 400);
 }
