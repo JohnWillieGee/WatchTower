@@ -3267,12 +3267,12 @@ function computeRisks() {
         } else if (wtype === 'cyclone') {
           lvl = RISK_LEVEL.DIRECT;
         } else if (wtype === 'thunderstorm') {
-          // When MF Storms toggle is off, skip thunderstorm entirely
-          if (!riskStormMFEnabled) return;
-          lvl = isAM ? RISK_LEVEL.WARNING : RISK_LEVEL.ADVISORY;
+          // Storm warnings only apply to AM/MF sites — skip all others
+          if (!riskStormMFEnabled || !isAM) return;
+          lvl = RISK_LEVEL.WARNING;
         } else if (wtype === 'severe_weather') {
-          // Severe weather: ADVISORY only, and only when MF Storms toggle is on
-          if (!riskStormMFEnabled) return;
+          // Severe weather only applies to AM/MF sites when toggle is on
+          if (!riskStormMFEnabled || !isAM) return;
           lvl = RISK_LEVEL.ADVISORY;
         } else if (wtype === 'heatwave') {
           lvl = RISK_LEVEL.ADVISORY;
