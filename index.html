@@ -1099,6 +1099,25 @@ function ratingRank(r){var v=(r||"").toLowerCase();if(v.includes("catastrophic")
 function alertColor(l){var v=(l||"").toLowerCase();if(v.includes("emergency"))return"#ff2222";if(v.includes("watch"))return"#ff8800";if(v.includes("advice"))return"#ffcc00";return"#888";}
 function alertClass(l){var v=(l||"").toLowerCase();if(v.includes("emergency"))return"alert-emergency";if(v.includes("watch"))return"alert-watchact";if(v.includes("advice"))return"alert-advice";return"alert-other";}
 function warnColor(type){var t=(type||"").toLowerCase().replace(/[ -]/g,"_");return WARN_COLORS[t]||WARN_COLORS.default;}
+
+function bomWarningUrl(pid, wtype, fallbackLink) {
+  // Build the correct BOM warning URL using the new /warning/<type-slug>/<pid> pattern.
+  // Falls back to direct link from RSS feed, or generic warnings page.
+  if (fallbackLink && fallbackLink.indexOf('bom.gov.au/warning/') !== -1) return fallbackLink;
+  if (!pid) return fallbackLink || 'https://www.bom.gov.au/australia/warnings/';
+  var slugMap = {
+    'thunderstorm':    'severe-thunderstorm-warning',
+    'severe_weather':  'severe-weather-warning',
+    'fire_weather':    'fire-weather-warning',
+    'cyclone':         'tropical-cyclone-warning',
+    'flood':           'flood-warning',
+    'wind':            'wind-warning',
+    'heatwave':        'heatwave-warning',
+    'other':           'warning',
+  };
+  var slug = slugMap[(wtype||'').toLowerCase().replace(/[ -]/g,'_')] || 'warning';
+  return 'https://www.bom.gov.au/warning/' + slug + '/' + pid;
+}
 function formatDateShort(str){if(!str)return"";var d=new Date(str);if(isNaN(d.getTime()))return str;return d.toLocaleDateString("en-AU",{weekday:"short",day:"numeric",month:"short",timeZone:"Australia/Sydney"});}
 function formatDateTime(str){if(!str)return"";var d=new Date(str);if(isNaN(d.getTime()))return str;return d.toLocaleDateString("en-AU",{weekday:"short",day:"numeric",month:"short",timeZone:"Australia/Sydney"})+" "+d.toLocaleTimeString("en-AU",{hour:"2-digit",minute:"2-digit",timeZone:"Australia/Sydney",hour12:false})+" AEST";}
 function statusEl(id,cls,msg){var el=document.getElementById(id);if(el){el.className="fetch-status "+cls;el.innerHTML=msg;}}
@@ -2053,7 +2072,7 @@ function parseBOMtxt(txt, productId, type, state) {
     hazards: hazards,
     issuedAt: issuedAt,
     text: fullText,
-    productUrl: 'https://www.bom.gov.au/products/' + productId + '.shtml'
+    productUrl: bomWarningUrl(productId, type, null)
   };
 }
 
@@ -2247,7 +2266,7 @@ function renderWarningsPanel() {
     Object.keys(byState).sort().forEach(function(st) {
       out += '<div class="warn-state-hdr">' + (STATE_NAMES[st]||st) + '</div>';
       byState[st].forEach(function(w) {
-        var wUrl = w.direct_url || (w.pid ? 'https://www.bom.gov.au/products/'+w.pid+'.shtml' : 'https://www.bom.gov.au/australia/warnings/');
+        var wUrl = w.direct_url || bomWarningUrl(w.pid, w.type, w.link);
         var coords = w.coords || getDistrictCoords((w.districts||'') + ' ' + w.title, w.state);
         if (w.cancelled) {
           // Cancelled: muted grey style, strikethrough title, CANCELLED badge
@@ -2338,7 +2357,7 @@ function renderWarningsMap() {
     var warnWeight   = w.cancelled ? 1 : 1.5;
 
     // Build popup content first (needed for polygon + marker bindPopup below)
-    var warningUrl = w.direct_url || (w.pid ? 'https://www.bom.gov.au/products/'+w.pid+'.shtml' : w.link || 'https://www.bom.gov.au/australia/warnings/');
+    var warningUrl = w.direct_url || bomWarningUrl(w.pid, w.type, w.link);
     var pidDisplay = w.pid || '';
     var popHtml = '<div>' +
       '<div class="pu-title" style="color:' + (w.cancelled ? '#999' : w.color) + (w.cancelled ? ';text-decoration:line-through' : '') + '">' + typeInfo.icon + ' ' + w.title + '</div>' +
