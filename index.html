@@ -3331,7 +3331,10 @@ var riskMarkerLayer = null;
 function updateRiskMapMarkers() {
   if (!riskMarkerLayer) riskMarkerLayer = L.layerGroup().addTo(map);
   riskMarkerLayer.clearLayers();
-  riskResults.forEach(function(r) { _drawSiteRing(r, RISK_COLOR[r.level]); });
+  // Only draw rings for WARNING and above — ADVISORY sites appear in the list only
+  riskResults.forEach(function(r) {
+    if (r.level >= RISK_LEVEL.WARNING) _drawSiteRing(r, RISK_COLOR[r.level]);
+  });
 }
 
 function _drawSiteRing(r, col) {
