@@ -613,7 +613,8 @@ header{background:var(--panel);border-bottom:1px solid var(--border);padding:0 1
     </div>
     <div class="risk-options-bar">
       <button class="risk-opt-chip on" id="ropt-fdr" onclick="toggleRiskOption('fdr',this)" title="Include Fire Danger Ratings">&#128293; FDR</button>
-      <button class="risk-opt-chip on" id="ropt-stormMF" onclick="toggleRiskOption('stormMF',this)" title="Elevate storm warnings for AM/MF sites">&#9928; MF Storms</button>
+      <button class="risk-opt-chip on" id="ropt-stormMF" onclick="toggleRiskOption('stormMF',this)" title="Show thunderstorm warnings for AM/MF sites">&#9928; MF Storms</button>
+      <button class="risk-opt-chip on" id="ropt-labels" onclick="toggleRiskOption('labels',this)" title="Show site name labels on risk map markers">&#127991; Labels</button>
     </div>
     <div id="risk-content">
       <div class="wp-none">Press Refresh or wait for data to load</div>
@@ -3028,8 +3029,9 @@ var RISK_COLOR = { 0:'', 1:'#f0c040', 2:'#f0a500', 3:'#ff6b3d', 4:'#ff2222' };
 
 // Distance threshold in km (driven by slider)
 var riskDistanceKm = 50;
-var riskFDREnabled = true;   // include FDR in risk assessment
+var riskFDREnabled = true;    // include FDR in risk assessment
 var riskStormMFEnabled = true; // elevate storm warnings for AM/MF sites
+var riskLabelsEnabled = true;  // show site name labels on risk map markers
 
 // Current computed risks: array of {site, level, reasons:[]}
 var riskResults = [];
@@ -3246,10 +3248,12 @@ function computeRisks() {
         } else if (wtype === 'cyclone') {
           lvl = RISK_LEVEL.DIRECT;
         } else if (wtype === 'thunderstorm') {
-          // Thunderstorm only: AM/MF sites get WARNING, others ADVISORY
-          lvl = (riskStormMFEnabled && isAM) ? RISK_LEVEL.WARNING : RISK_LEVEL.ADVISORY;
+          // When MF Storms toggle is off, skip thunderstorm entirely
+          if (!riskStormMFEnabled) return;
+          lvl = isAM ? RISK_LEVEL.WARNING : RISK_LEVEL.ADVISORY;
         } else if (wtype === 'severe_weather') {
-          // Severe weather: ADVISORY only — does not elevate for AM/MF sites
+          // Severe weather: ADVISORY only, and only when MF Storms toggle is on
+          if (!riskStormMFEnabled) return;
           lvl = RISK_LEVEL.ADVISORY;
         } else if (wtype === 'heatwave') {
           lvl = RISK_LEVEL.ADVISORY;
@@ -3363,13 +3367,14 @@ function _drawSiteRing(r, col) {
     (r.reasons.length>4?"<div style='font-size:9px;color:var(--text2);padding-top:3px'>+"+(r.reasons.length-4)+" more</div>":"") +
     "</div>";
 
-  L.marker([site.lat, site.lon], {
+  var marker = L.marker([site.lat, site.lon], {
     icon: L.divIcon({ html:html, className:'', iconSize:[size,size], iconAnchor:[size/2,size/2] }),
     zIndexOffset: 500, interactive: true
-  }).bindTooltip(siteName, {
-    permanent: true, direction:'top', offset:[0,-(size/2+4)], className:'risk-tooltip'
-  }).bindPopup(popupHtml, { className:'ba-popup risk-popup', maxWidth:260 })
-    .addTo(riskMarkerLayer);
+  }).bindPopup(popupHtml, { className:'ba-popup risk-popup', maxWidth:260 });
+  if (riskLabelsEnabled) {
+    marker.bindTooltip(siteName, { permanent: true, direction:'top', offset:[0,-(size/2+4)], className:'risk-tooltip' });
+  }
+  marker.addTo(riskMarkerLayer);
 }
 
 
@@ -3589,6 +3594,11 @@ function toggleRiskOption(opt, el) {
   } else if (opt === 'stormMF') {
     riskStormMFEnabled = !riskStormMFEnabled;
     el.classList.toggle('on', riskStormMFEnabled);
+  } else if (opt === 'labels') {
+    riskLabelsEnabled = !riskLabelsEnabled;
+    el.classList.toggle('on', riskLabelsEnabled);
+    updateRiskMapMarkers(); // redraw markers immediately without recomputing risk
+    return;
   }
   computeRisks();
 }
