@@ -1345,33 +1345,44 @@ function refreshAll(){
 // Shows a brief toast on completion so you know it happened — does not
 // clear or disrupt the current map view during the fetch.
 var AUTO_REFRESH_MINS = 5;
-var autoRefreshTimer = null;
+var autoRefreshInterval = null;   // setInterval handle — survives tab throttling better
 var autoRefreshNextAt = null;
+var countdownTimer = null;
 
 function silentRefresh(){
   var btn = document.getElementById("refresh-btn");
-  btn.classList.add("spinning");
-  // Reset data stores but don't clear UI panels — they update when fetch completes
+  if(btn) btn.classList.add("spinning");
+  // Reset data stores — UI panels update when fetch completes
   warningsData=[];bomWarnings=[];alertsData=[];
   allIncidents={nsw:[],vic:[],qld:[],sa:[],wa:[],tas:[]};
   feedStatus={nsw:"pending",vic:"pending",qld:"pending",sa:"pending",wa:"pending",tas:"pending"};
   fdrFeatures=[];fdrPeriodTimes={};fdrRatings={};
-  // Redraw layers when data returns (existing render functions handle this)
   startFetching();
   setTimeout(function(){
-    btn.classList.remove("spinning");
+    if(btn) btn.classList.remove("spinning");
     var now = new Date();
     var timeStr = now.toLocaleTimeString("en-AU",{hour:"2-digit",minute:"2-digit",timeZone:"Australia/Sydney",hour12:false});
     showToast("Auto-refreshed at " + timeStr + " AEST");
-    scheduleNextRefresh();
   }, 8000);
+  // Always reset the countdown after each fire regardless of fetch outcome
+  autoRefreshNextAt = Date.now() + AUTO_REFRESH_MINS * 60 * 1000;
 }
 
 function scheduleNextRefresh(){
-  if(autoRefreshTimer) clearTimeout(autoRefreshTimer);
+  // Use setInterval so the cycle continues even if a single callback errors
+  if(autoRefreshInterval) clearInterval(autoRefreshInterval);
   autoRefreshNextAt = Date.now() + AUTO_REFRESH_MINS * 60 * 1000;
-  autoRefreshTimer = setTimeout(silentRefresh, AUTO_REFRESH_MINS * 60 * 1000);
-  updateRefreshCountdown();
+  autoRefreshInterval = setInterval(function(){
+    autoRefreshNextAt = Date.now() + AUTO_REFRESH_MINS * 60 * 1000;
+    silentRefresh();
+  }, AUTO_REFRESH_MINS * 60 * 1000);
+  startCountdown();
+}
+
+function startCountdown(){
+  if(countdownTimer) clearInterval(countdownTimer);
+  countdownTimer = setInterval(updateRefreshCountdown, 10000);
+  updateRefreshCountdown(); // update immediately
 }
 
 function updateRefreshCountdown(){
@@ -1381,7 +1392,6 @@ function updateRefreshCountdown(){
   var mins = Math.floor(secsLeft / 60);
   var secs = secsLeft % 60;
   btn.title = "Auto-refresh in " + mins + "m " + (secs<10?"0":"") + secs + "s — click to refresh now";
-  if(secsLeft > 0) setTimeout(updateRefreshCountdown, 10000); // update tooltip every 10s
 }
 
 // ── FDR ──
