@@ -462,7 +462,12 @@ header{background:var(--panel);border-bottom:1px solid var(--border);padding:0 1
       <div id="lightning-panel-head" onmousedown="startDragLightning(event)">
         &#9889; LIGHTNING — Live Strikes (Blitzortung.org)
         <span>Personal/non-commercial use only &nbsp;|&nbsp; 15 min network latency</span>
-        <div style="display:flex;gap:4px;align-items:center;">
+        <div style="display:flex;gap:6px;align-items:center;">
+          <label style="font-size:9px;color:var(--text3);display:flex;align-items:center;gap:3px;">
+            &#9681;<input type="range" id="lightning-opacity" min="20" max="100" value="100"
+              oninput="onOpacityChange('lightning')" onmousedown="event.stopPropagation()"
+              style="width:50px;accent-color:#9775fa;cursor:pointer;vertical-align:middle;">
+          </label>
           <button class="fit-map-btn" id="lightning-fit-btn" onclick="toggleFitToMap('lightning')" title="Fit to map / restore">&#11020; Fit</button>
           <button id="lightning-close" onclick="toggleLightning()" title="Close">&#10005;</button>
         </div>
@@ -485,7 +490,12 @@ header{background:var(--panel);border-bottom:1px solid var(--border);padding:0 1
           </select>
           &nbsp;|&nbsp; Windy API (testing)
         </span>
-        <div style="display:flex;gap:4px;align-items:center;">
+        <div style="display:flex;gap:6px;align-items:center;">
+          <label style="font-size:9px;color:var(--text3);display:flex;align-items:center;gap:3px;">
+            &#9681;<input type="range" id="windy-opacity" min="20" max="100" value="100"
+              oninput="onOpacityChange('windy')" onmousedown="event.stopPropagation()"
+              style="width:50px;accent-color:#00c8ff;cursor:pointer;vertical-align:middle;">
+          </label>
           <button class="fit-map-btn" id="windy-fit-btn" onclick="toggleFitToMap('windy')" title="Fit to map / restore">&#11020; Fit</button>
           <button id="windy-close" onclick="toggleWindy()" title="Close">&#10005;</button>
         </div>
@@ -3183,12 +3193,13 @@ function toggleFitToMap(which){
 }
 
 function applyFitToMap(which){
-  var panel = document.getElementById(which+'-panel');
-  var mapEl = document.getElementById('map');
-  var btn   = document.getElementById(which+'-fit-btn');
-  var rect  = mapEl.getBoundingClientRect();
+  var panel  = document.getElementById(which+'-panel');
+  var mapEl  = document.getElementById('map');
+  var btn    = document.getElementById(which+'-fit-btn');
+  var rect   = mapEl.getBoundingClientRect();
+  var headH  = document.getElementById(which+'-panel-head').offsetHeight;
 
-  // Save current state so we can restore it
+  // Save current state
   _fitSaved[which] = {
     top:     panel.style.top,
     left:    panel.style.left,
@@ -3198,15 +3209,19 @@ function applyFitToMap(which){
     opacity: panel.style.opacity
   };
 
-  // Position panel exactly over the map
+  // Get current opacity slider value
+  var slider = document.getElementById(which+'-opacity');
+  var opacity = slider ? (slider.value / 100) : 0.72;
+
+  // Position panel header above the map, content exactly over map
   panel.style.position = 'fixed';
-  panel.style.top      = rect.top  + 'px';
+  panel.style.top      = (rect.top - headH) + 'px';
   panel.style.left     = rect.left + 'px';
   panel.style.right    = 'auto';
   panel.style.width    = rect.width  + 'px';
-  panel.style.height   = rect.height + 'px';
-  panel.style.opacity  = '0.72';
-  panel.style.zIndex   = '900'; // below controls but above map tiles
+  panel.style.height   = (rect.height + headH) + 'px';
+  panel.style.opacity  = opacity;
+  panel.style.zIndex   = '900';
   panel.classList.add('panel-overlay');
   btn.classList.add('active');
   btn.textContent = '⊠ Unfit';
@@ -3235,6 +3250,16 @@ function restoreFromFit(which){
   btn.classList.remove('active');
   btn.textContent = '⤢ Fit';
   _fitState[which] = false;
+}
+
+function onOpacityChange(which){
+  var slider = document.getElementById(which+'-opacity');
+  if(!slider) return;
+  var val = slider.value / 100;
+  // Only apply opacity visually if in fit mode, otherwise it applies on next fit
+  if(_fitState[which]){
+    document.getElementById(which+'-panel').style.opacity = val;
+  }
 }
 function toggleWeatherPanel(){document.getElementById("weather-panel").classList.toggle("collapsed");setTimeout(function(){if(map)map.invalidateSize();},260);}
 
