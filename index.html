@@ -172,6 +172,31 @@ header{background:var(--panel);border-bottom:1px solid var(--border);padding:0 1
 #lightning-iframe{flex:1;border:none;width:100%;height:100%;display:block;}
 #lightning-resize{position:absolute;bottom:0;right:0;width:16px;height:16px;cursor:nwse-resize;z-index:1003;background:linear-gradient(135deg,transparent 40%,#9775fa 40%,#9775fa 55%,transparent 55%,transparent 70%,#9775fa 70%,#9775fa 85%,transparent 85%);opacity:0.6;}
 #lightning-resize:hover{opacity:1;}
+/* windy overlay */
+#windy-panel{position:absolute;top:50px;right:50px;z-index:1002;width:560px;height:440px;border-radius:var(--radius);overflow:hidden;border:1px solid #00c8ff;box-shadow:0 4px 20px rgba(0,0,0,0.7);display:none;flex-direction:column;}
+#windy-panel.visible{display:flex;}
+#windy-panel-head{background:var(--panel);border-bottom:1px solid #00c8ff;padding:5px 10px;display:flex;align-items:center;justify-content:space-between;font-size:10px;font-weight:700;letter-spacing:1px;color:#00c8ff;flex-shrink:0;cursor:move;}
+#windy-panel-head span{font-size:9px;color:var(--text3);font-weight:400;letter-spacing:0;}
+#windy-close{background:none;border:none;color:#00c8ff;cursor:pointer;font-size:14px;padding:0 2px;line-height:1;}
+#windy-close:hover{color:#fff;}
+#windy-container{flex:1;width:100%;position:relative;background:#0a1628;}
+#windy-map{width:100%;height:100%;}
+#windy-loading{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#00c8ff;font-size:11px;font-family:monospace;letter-spacing:1px;background:#0a1628;}
+#windy-resize{position:absolute;bottom:0;right:0;width:16px;height:16px;cursor:nwse-resize;z-index:1003;background:linear-gradient(135deg,transparent 40%,#00c8ff 40%,#00c8ff 55%,transparent 55%,transparent 70%,#00c8ff 70%,#00c8ff 85%,transparent 85%);opacity:0.6;}
+#windy-resize:hover{opacity:1;}
+#windy-layer-select{background:var(--panel);border:1px solid #00c8ff44;color:#00c8ff;font-family:monospace;font-size:9px;padding:2px 4px;border-radius:3px;cursor:pointer;}
+#windy-layer-select option{background:var(--panel);}
+#windy{width:100%;height:100%;display:block;}
+/* fit-to-map button */
+.fit-map-btn{background:none;border:1px solid currentColor;color:inherit;cursor:pointer;font-size:9px;padding:2px 5px;border-radius:3px;font-family:monospace;letter-spacing:0.5px;opacity:0.7;transition:opacity .15s;}
+.fit-map-btn:hover{opacity:1;}
+.fit-map-btn.active{opacity:1;font-weight:700;}
+/* overlay mode — panel sits over the map */
+.panel-overlay{position:fixed !important;border-radius:0 !important;box-shadow:none !important;transition:opacity .2s;}
+.panel-overlay #lightning-panel-head,
+.panel-overlay #windy-panel-head{cursor:default !important;border-radius:0;}
+.panel-overlay #lightning-resize,
+.panel-overlay #windy-resize{display:none;}
 
 /* ── RISK PANEL ─────────────────────────────────────────────────────────── */
 #risk-panel{width:300px;min-width:300px;background:var(--panel);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;transition:width .25s,min-width .25s;flex-shrink:0;}
@@ -427,6 +452,7 @@ header{background:var(--panel);border-bottom:1px solid var(--border);padding:0 1
       <button class="map-btn" id="btn-incidents" onclick="toggleIncidentsLayer()">&#9888; Incidents</button>
       <button class="map-btn" id="btn-radar" onclick="toggleRadarLayer()">&#127783; Radar</button>
       <button class="map-btn" id="btn-lightning" onclick="toggleLightning()">&#9889; Lightning</button>
+      <button class="map-btn" id="btn-windy" onclick="toggleWindy()">&#127788; Wind</button>
     </div>
     <div id="map"></div>
     <div id="radar-controls" class="hidden">
@@ -439,14 +465,40 @@ header{background:var(--panel);border-bottom:1px solid var(--border);padding:0 1
       <div id="lightning-panel-head" onmousedown="startDragLightning(event)">
         &#9889; LIGHTNING — Live Strikes (Blitzortung.org)
         <span>Personal/non-commercial use only &nbsp;|&nbsp; 15 min network latency</span>
-        <button id="lightning-close" onclick="toggleLightning()" title="Close">&#10005;</button>
+        <div style="display:flex;gap:4px;align-items:center;">
+          <button class="fit-map-btn" id="lightning-fit-btn" onclick="toggleFitToMap('lightning')" title="Fit to map / restore">&#11020; Fit</button>
+          <button id="lightning-close" onclick="toggleLightning()" title="Close">&#10005;</button>
+        </div>
       </div>
       <iframe id="lightning-iframe" src="about:blank"
         data-src="https://map.blitzortung.org/index.php?interactive=1&NavigationControl=1&FullScreenControl=0&Cookies=0&InfoDiv=0&MenuButtonDiv=0&ScaleControl=0&LinksCheckboxChecked=1&LinksRangeValue=10&MapStyle=STYLE_TOKEN&MapStyleRangeValue=0&Advertisment=0#3/-27/134"
         allowfullscreen></iframe>
       <div id="lightning-resize" onmousedown="startResizeLightning(event)" title="Drag to resize"></div>
     </div>
-    <div id="legend">
+    <div id="windy-panel">
+      <div id="windy-panel-head" onmousedown="startDragWindy(event)">
+        &#127788; WIND — Windy.com Forecast
+        <span>
+          <select id="windy-layer-select" onchange="setWindyLayer(this.value)" title="Change layer">
+            <option value="wind">Wind</option>
+            <option value="gust">Gusts</option>
+            <option value="rain">Rain</option>
+            <option value="temp">Temperature</option>
+            <option value="clouds">Clouds</option>
+          </select>
+          &nbsp;|&nbsp; Windy API (testing)
+        </span>
+        <div style="display:flex;gap:4px;align-items:center;">
+          <button class="fit-map-btn" id="windy-fit-btn" onclick="toggleFitToMap('windy')" title="Fit to map / restore">&#11020; Fit</button>
+          <button id="windy-close" onclick="toggleWindy()" title="Close">&#10005;</button>
+        </div>
+      </div>
+      <div id="windy-container">
+        <div id="windy"></div>
+        <div id="windy-loading">&#127788; Loading wind data...</div>
+      </div>
+      <div id="windy-resize" onmousedown="startResizeWindy(event)" title="Drag to resize"></div>
+    </div>
       <h4>Broadcast Sites</h4>
       <div class="li"><div class="ld" style="background:#f0a500"></div>AM</div>
       <div class="li"><div class="ld" style="background:#00d4aa"></div>FM</div>
@@ -838,15 +890,15 @@ function runDiagnostics(){
     })
     .then(function(data){
       var ms = Date.now() - start;
-      var checkedUtc = (data.last_checked_utc || data.generated_utc) ? new Date(data.last_checked_utc || data.generated_utc) : null;
-      var ageMin = checkedUtc ? Math.round((Date.now() - checkedUtc) / 60000) : null;
+      var genUtc = data.generated_utc ? new Date(data.generated_utc) : null;
+      var ageMin = genUtc ? Math.round((Date.now() - genUtc) / 60000) : null;
       var ageStr = ageMin !== null ? ageMin+'m ago' : 'unknown';
       var n = (data.warnings||[]).length;
       var errors = Object.keys(data.fetch_errors||{});
 
       var html = '<b>live_data.json</b> &mdash; <span style="color:var(--fetch-ok)">&#10003; readable</span><br>';
       html += 'Loaded in '+ms+'ms<br>';
-      html += 'Last checked: '+(checkedUtc ? checkedUtc.toLocaleString('en-AU',{timeZone:'Australia/Sydney'}) : 'n/a')+' ('+ageStr+')<br>';
+      html += 'Generated: '+(genUtc ? genUtc.toLocaleString('en-AU',{timeZone:'Australia/Sydney'}) : 'n/a')+' ('+ageStr+')<br>';
       html += 'Active warnings: <b>'+n+'</b><br>';
       if(errors.length){
         html += '&#9888; Fetch errors: '+errors.join(', ')+'<br>';
@@ -854,10 +906,10 @@ function runDiagnostics(){
         html += 'All state feeds fetched OK<br>';
       }
       html += '<br>';
-      if(ageMin !== null && ageMin > 40){
-        html += '<span style="color:orange">&#9888; Data is '+ageMin+'m old — local fetcher may have stalled</span>';
+      if(ageMin !== null && ageMin > 20){
+        html += '<span style="color:orange">&#9888; Data is '+ageMin+'m old — Action may have stalled</span>';
       } else {
-        html += '<span style="color:var(--fetch-ok)">&#10003; Local fetcher pipeline operational</span>';
+        html += '<span style="color:var(--fetch-ok)">&#10003; GitHub Action pipeline operational</span>';
       }
       el.innerHTML = html;
     })
@@ -2104,9 +2156,9 @@ function fetchBOMWarnings() {
       var now = new Date();
       var ts = now.toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit',timeZone:'Australia/Sydney'})+' AEST';
 
-      // Parse last checked time from JSON (last_checked_utc always updates; fall back to generated_utc for older files)
-      var checkedUtc = (data.last_checked_utc || data.generated_utc) ? new Date(data.last_checked_utc || data.generated_utc) : null;
-      var ageMin = checkedUtc ? Math.round((now - checkedUtc) / 60000) : null;
+      // Parse generated time from JSON
+      var genUtc = data.generated_utc ? new Date(data.generated_utc) : null;
+      var ageMin = genUtc ? Math.round((now - genUtc) / 60000) : null;
       var ageStr = ageMin !== null ? (ageMin < 2 ? 'just now' : ageMin+'m ago') : '';
 
       // Map live_data warnings into bomWarnings format
@@ -3039,7 +3091,169 @@ function stopResizeLightning(){
   document.removeEventListener('mousemove',onResizeLightning);
   document.removeEventListener('mouseup',stopResizeLightning);
 }
-function toggleWeatherPanel(){document.getElementById("weather-panel").classList.toggle("collapsed");setTimeout(function(){if(map)map.invalidateSize();},260);}
+
+// ── WINDY PANEL ──────────────────────────────────────────────────────────────
+var WINDY_API_KEY = '2dH1cLzoQN70PBqLl81GNV4RsBBUuVdx';
+var windyVisible  = false;
+var windyLoaded   = false;
+var windyAPI      = null;
+
+function toggleWindy(){
+  windyVisible = !windyVisible;
+  var panel = document.getElementById('windy-panel');
+  var btn   = document.getElementById('btn-windy');
+  panel.classList.toggle('visible', windyVisible);
+  btn.classList.toggle('on', windyVisible);
+  if(windyVisible && !windyLoaded){
+    initWindyMap();
+  }
+}
+
+function initWindyMap(){
+  // Load Windy API boot script (brings its own Leaflet 1.4)
+  var s = document.createElement('script');
+  s.src = 'https://api.windy.com/assets/map-forecast/libBoot.js';
+  s.onload = function(){
+    var options = {
+      key: WINDY_API_KEY,
+      verbose: false,
+      lat: -27,
+      lon: 134,
+      zoom: 4,
+    };
+    windyInit(options, function(api){
+      windyAPI = api;
+      windyLoaded = true;
+      // Set default layer to wind
+      api.store.set('overlay', 'wind');
+      // Hide loading indicator
+      var loading = document.getElementById('windy-loading');
+      if(loading) loading.style.display = 'none';
+    });
+  };
+  s.onerror = function(){
+    var loading = document.getElementById('windy-loading');
+    if(loading) loading.textContent = '⚠ Failed to load Windy API';
+  };
+  document.head.appendChild(s);
+}
+
+function setWindyLayer(layer){
+  if(windyAPI) windyAPI.store.set('overlay', layer);
+}
+
+// Drag support for Windy panel
+var _windyDragEl = null, _windyDragOX = 0, _windyDragOY = 0;
+function startDragWindy(e){
+  var panel = document.getElementById('windy-panel');
+  _windyDragEl = panel;
+  _windyDragOX = e.clientX - panel.offsetLeft;
+  _windyDragOY = e.clientY - panel.offsetTop;
+  panel.style.right = 'auto';
+  document.addEventListener('mousemove', onDragWindy);
+  document.addEventListener('mouseup', stopDragWindy);
+}
+function onDragWindy(e){
+  if(!_windyDragEl) return;
+  _windyDragEl.style.left = (e.clientX - _windyDragOX) + 'px';
+  _windyDragEl.style.top  = (e.clientY - _windyDragOY) + 'px';
+}
+function stopDragWindy(){ _windyDragEl = null; document.removeEventListener('mousemove',onDragWindy); document.removeEventListener('mouseup',stopDragWindy); }
+
+// Resize support for Windy panel
+var _windyResizeEl = null, _windyResizeOX = 0, _windyResizeOY = 0, _windyResizeW = 0, _windyResizeH = 0;
+function startResizeWindy(e){
+  e.preventDefault();
+  _windyResizeEl = document.getElementById('windy-panel');
+  _windyResizeOX = e.clientX; _windyResizeOY = e.clientY;
+  _windyResizeW = _windyResizeEl.offsetWidth; _windyResizeH = _windyResizeEl.offsetHeight;
+  document.getElementById('windy').style.pointerEvents = 'none';
+  document.addEventListener('mousemove', onResizeWindy);
+  document.addEventListener('mouseup', stopResizeWindy);
+}
+function onResizeWindy(e){
+  if(!_windyResizeEl) return;
+  var w = Math.max(320, _windyResizeW + (e.clientX - _windyResizeOX));
+  var h = Math.max(240, _windyResizeH + (e.clientY - _windyResizeOY));
+  _windyResizeEl.style.width  = w + 'px';
+  _windyResizeEl.style.height = h + 'px';
+}
+function stopResizeWindy(){
+  document.getElementById('windy').style.pointerEvents = '';
+  document.removeEventListener('mousemove', onResizeWindy);
+  document.removeEventListener('mouseup', stopResizeWindy);
+  _windyResizeEl = null;
+}
+
+// ── FIT TO MAP ────────────────────────────────────────────────────────────────
+// Tracks which panels are in overlay mode
+var _fitState = { lightning: false, windy: false };
+// Saved positions/sizes to restore when snapping back
+var _fitSaved = { lightning: {}, windy: {} };
+
+function toggleFitToMap(which){
+  _fitState[which] = !_fitState[which];
+  if(_fitState[which]){
+    applyFitToMap(which);
+  } else {
+    restoreFromFit(which);
+  }
+}
+
+function applyFitToMap(which){
+  var panel = document.getElementById(which+'-panel');
+  var mapEl = document.getElementById('map');
+  var btn   = document.getElementById(which+'-fit-btn');
+  var rect  = mapEl.getBoundingClientRect();
+
+  // Save current state so we can restore it
+  _fitSaved[which] = {
+    top:     panel.style.top,
+    left:    panel.style.left,
+    right:   panel.style.right,
+    width:   panel.style.width,
+    height:  panel.style.height,
+    opacity: panel.style.opacity
+  };
+
+  // Position panel exactly over the map
+  panel.style.position = 'fixed';
+  panel.style.top      = rect.top  + 'px';
+  panel.style.left     = rect.left + 'px';
+  panel.style.right    = 'auto';
+  panel.style.width    = rect.width  + 'px';
+  panel.style.height   = rect.height + 'px';
+  panel.style.opacity  = '0.72';
+  panel.style.zIndex   = '900'; // below controls but above map tiles
+  panel.classList.add('panel-overlay');
+  btn.classList.add('active');
+  btn.textContent = '⊠ Unfit';
+
+  // Snap back if user pans or zooms the main map
+  if(map){
+    map.once('movestart', function(){ if(_fitState[which]) restoreFromFit(which); });
+    map.once('zoomstart', function(){ if(_fitState[which]) restoreFromFit(which); });
+  }
+}
+
+function restoreFromFit(which){
+  var panel = document.getElementById(which+'-panel');
+  var btn   = document.getElementById(which+'-fit-btn');
+  var saved = _fitSaved[which];
+
+  panel.style.position = 'absolute';
+  panel.style.top      = saved.top    || '50px';
+  panel.style.left     = saved.left   || '';
+  panel.style.right    = saved.right  || '50px';
+  panel.style.width    = saved.width  || '';
+  panel.style.height   = saved.height || '';
+  panel.style.opacity  = '1';
+  panel.style.zIndex   = '1002';
+  panel.classList.remove('panel-overlay');
+  btn.classList.remove('active');
+  btn.textContent = '⤢ Fit';
+  _fitState[which] = false;
+}document.getElementById("weather-panel").classList.toggle("collapsed");setTimeout(function(){if(map)map.invalidateSize();},260);}
 
 
 // ── WATCHTOWER: RISK ASSESSMENT ENGINE ──────────────────────────────────────
