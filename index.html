@@ -3241,12 +3241,22 @@ function computeRisks() {
 
         var lvl;
         if (insidePoly) {
-          lvl = RISK_LEVEL.IMPACTED;
-        } else if (isEmergency || d < 5) {
+          // Inside polygon — level reflects alert level, not automatic IMPACTED
+          if (isEmergency) {
+            lvl = RISK_LEVEL.IMPACTED;
+          } else if (al.includes('watch')) {
+            lvl = RISK_LEVEL.DIRECT;
+          } else {
+            lvl = RISK_LEVEL.WARNING; // Advice inside polygon → WARNING
+          }
+        } else if (isEmergency || (d < 5 && !al.includes('advice'))) {
           lvl = RISK_LEVEL.IMPACTED;
         } else if (al.includes('advice') && d >= 5) {
           // Advice-level beyond 5km — skip
           return;
+        } else if (al.includes('advice') && d < 5) {
+          // Advice-level within 5km — WARNING only
+          lvl = RISK_LEVEL.WARNING;
         } else if (al.includes('watch') || d < 20) {
           lvl = RISK_LEVEL.DIRECT;
         } else {
@@ -3287,12 +3297,12 @@ function computeRisks() {
         } else if (wtype === 'cyclone') {
           lvl = RISK_LEVEL.DIRECT;
         } else if (wtype === 'thunderstorm') {
-          // When toggle off, skip entirely. AM/MF → WARNING, all others → ADVISORY
-          if (!riskStormMFEnabled) return;
-          lvl = isAM ? RISK_LEVEL.WARNING : RISK_LEVEL.ADVISORY;
+          // Storm warnings: AM/MF sites only. Toggle off = skip entirely.
+          if (!riskStormMFEnabled || !isAM) return;
+          lvl = RISK_LEVEL.WARNING;
         } else if (wtype === 'severe_weather') {
-          // When toggle off, skip entirely. All sites → ADVISORY (no ring, list only)
-          if (!riskStormMFEnabled) return;
+          // Severe weather: AM/MF sites only. Toggle off = skip entirely.
+          if (!riskStormMFEnabled || !isAM) return;
           lvl = RISK_LEVEL.ADVISORY;
         } else if (wtype === 'heatwave') {
           lvl = RISK_LEVEL.ADVISORY;
