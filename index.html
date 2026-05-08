@@ -3226,6 +3226,21 @@ function applyFitToMap(which){
   btn.classList.add('active');
   btn.textContent = '⊠ Unfit';
 
+  // Sync Windy iframe to main map position/zoom
+  if(which === 'windy' && map){
+    var centre = map.getCenter();
+    var zoom   = map.getZoom();
+    var iframe = document.getElementById('windy-iframe');
+    if(iframe && iframe.contentWindow){
+      iframe.contentWindow.postMessage({
+        type: 'setZoom',
+        lat:  centre.lat,
+        lon:  centre.lng,
+        zoom: zoom
+      }, '*');
+    }
+  }
+
   // Snap back if user pans or zooms the main map
   if(map){
     map.once('movestart', function(){ if(_fitState[which]) restoreFromFit(which); });
