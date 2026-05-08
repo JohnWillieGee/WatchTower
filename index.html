@@ -2204,13 +2204,13 @@ function fetchBOMWarnings() {
       updateIncidentCount();
 
       // ── Render panels separately — errors here must NOT overwrite fetch status ──
-      try { renderIncidentsPanel(); } catch(e) { console.error('renderIncidentsPanel:', e); }
-      try { if(incidentsVisible) renderIncidentsMap(); } catch(e) { console.error('renderIncidentsMap:', e); }
+      renderIncidentsPanel();
+      if(incidentsVisible) renderIncidentsMap();
 
       // ── Load NSW alert zones (CAP-AU polygons) from live_data.json ────────
       alertsData = data.nsw_alert_zones || [];
-      try { renderAlertsPanel(); } catch(e) { console.error('renderAlertsPanel:', e); }
-      try { if(alertsVisible) renderAlertsMap(); } catch(e) { console.error('renderAlertsMap:', e); }
+      renderAlertsPanel();
+      if(alertsVisible) renderAlertsMap();
       var nz = alertsData.length;
       if(nz === 0){
         statusEl("alerts-fetch-status","fetch-ok","&#10003; No active warning zones \u00b7 RFS");
@@ -2218,7 +2218,7 @@ function fetchBOMWarnings() {
         statusEl("alerts-fetch-status","fetch-ok","&#10003; "+nz+" warning zone"+(nz>1?"s":"")+" \u00b7 RFS");
       }
       // Run risk assessment after all data is loaded
-      try { computeRisks(); } catch(e) { console.error('computeRisks:', e); }
+      computeRisks();
     })
     .catch(function(e){
       // Only fires if live_data.json fetch/parse itself failed — not render errors
@@ -2907,7 +2907,8 @@ function renderIncidentsMap(){
 
       // Fire boundary polygons
       (inc.polys||[]).forEach(function(poly){
-        L.polygon(poly.coordinates[0].map(function(c){return[c[1],c[0]];}),
+        var ring = (poly && poly.coordinates) ? poly.coordinates[0] : poly;
+        L.polygon((ring||[]).map(function(c){return[c[1],c[0]];}),
           {color:color,weight:1.5,opacity:.8,fillColor:color,fillOpacity:.2})
           .bindPopup(popHtml,{className:"fire-popup",maxWidth:360}).addTo(incidentsLayer);
       });
@@ -3155,8 +3156,13 @@ function distToIncidentKm(site, inc) {
   var minD = haversineKm(site.lat, site.lon, inc.lat, inc.lng);
   if (inc.polys && inc.polys.length > 0) {
     inc.polys.forEach(function(poly) {
-      var d = minDistToPolyKm(site.lat, site.lon, poly.coordinates[0]);
-      if (d < minD) minD = d;
+      // Handle both GeoJSON polygon objects {type:"Polygon",coordinates:[[...]]}
+      // and raw coordinate rings [[lng,lat],...] (from parse_nsw_georss)
+      var ring = (poly && poly.coordinates) ? poly.coordinates[0] : poly;
+      if (ring && ring.length > 0) {
+        var d = minDistToPolyKm(site.lat, site.lon, ring);
+        if (d < minD) minD = d;
+      }
     });
   }
   return minD;
@@ -3227,7 +3233,8 @@ function computeRisks() {
 
         // Inside polygon = always impacted, no distance check needed
         var insidePoly = inc.polys && inc.polys.length > 0 && inc.polys.some(function(poly) {
-          return pointInPolygon(site.lat, site.lon, poly.coordinates[0]);
+          var ring = (poly && poly.coordinates) ? poly.coordinates[0] : poly;
+          return ring && pointInPolygon(site.lat, site.lon, ring);
         });
 
         if (!insidePoly && d > effectiveRange) return;
@@ -3280,12 +3287,12 @@ function computeRisks() {
         } else if (wtype === 'cyclone') {
           lvl = RISK_LEVEL.DIRECT;
         } else if (wtype === 'thunderstorm') {
-          // Storm warnings only apply to AM/MF sites — skip all others
-          if (!riskStormMFEnabled || !isAM) return;
-          lvl = RISK_LEVEL.WARNING;
+          // When toggle off, skip entirely. AM/MF → WARNING, all others → ADVISORY
+          if (!riskStormMFEnabled) return;
+          lvl = isAM ? RISK_LEVEL.WARNING : RISK_LEVEL.ADVISORY;
         } else if (wtype === 'severe_weather') {
-          // Severe weather only applies to AM/MF sites when toggle is on
-          if (!riskStormMFEnabled || !isAM) return;
+          // When toggle off, skip entirely. All sites → ADVISORY (no ring, list only)
+          if (!riskStormMFEnabled) return;
           lvl = RISK_LEVEL.ADVISORY;
         } else if (wtype === 'heatwave') {
           lvl = RISK_LEVEL.ADVISORY;
