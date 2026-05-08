@@ -179,14 +179,11 @@ header{background:var(--panel);border-bottom:1px solid var(--border);padding:0 1
 #windy-panel-head span{font-size:9px;color:var(--text3);font-weight:400;letter-spacing:0;}
 #windy-close{background:none;border:none;color:#00c8ff;cursor:pointer;font-size:14px;padding:0 2px;line-height:1;}
 #windy-close:hover{color:#fff;}
-#windy-container{flex:1;width:100%;position:relative;background:#0a1628;}
-#windy-map{width:100%;height:100%;}
-#windy-loading{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#00c8ff;font-size:11px;font-family:monospace;letter-spacing:1px;background:#0a1628;}
+#windy-container{flex:1;width:100%;position:relative;background:#0a1628;}#windy-loading{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#00c8ff;font-size:11px;font-family:monospace;letter-spacing:1px;background:#0a1628;}
 #windy-resize{position:absolute;bottom:0;right:0;width:16px;height:16px;cursor:nwse-resize;z-index:1003;background:linear-gradient(135deg,transparent 40%,#00c8ff 40%,#00c8ff 55%,transparent 55%,transparent 70%,#00c8ff 70%,#00c8ff 85%,transparent 85%);opacity:0.6;}
 #windy-resize:hover{opacity:1;}
 #windy-layer-select{background:var(--panel);border:1px solid #00c8ff44;color:#00c8ff;font-family:monospace;font-size:9px;padding:2px 4px;border-radius:3px;cursor:pointer;}
 #windy-layer-select option{background:var(--panel);}
-#windy-map-placeholder, #windy{width:100%;height:100%;display:block;}
 /* fit-to-map button */
 .fit-map-btn{background:none;border:1px solid currentColor;color:inherit;cursor:pointer;font-size:9px;padding:2px 5px;border-radius:3px;font-family:monospace;letter-spacing:0.5px;opacity:0.7;transition:opacity .15s;}
 .fit-map-btn:hover{opacity:1;}
@@ -494,7 +491,9 @@ header{background:var(--panel);border-bottom:1px solid var(--border);padding:0 1
         </div>
       </div>
       <div id="windy-container">
-        <div id="windy-map-placeholder"></div>
+        <iframe id="windy-iframe" src="about:blank"
+          data-src="windy_panel.html?layer=wind"
+          style="width:100%;height:100%;border:none;display:block;"></iframe>
         <div id="windy-loading">&#127788; Loading wind data...</div>
       </div>
       <div id="windy-resize" onmousedown="startResizeWindy(event)" title="Drag to resize"></div>
@@ -3094,10 +3093,8 @@ function stopResizeLightning(){
 }
 
 // ── WINDY PANEL ──────────────────────────────────────────────────────────────
-var WINDY_API_KEY = '2dH1cLzoQN70PBqLl81GNV4RsBBUuVdx';
-var windyVisible  = false;
-var windyLoaded   = false;
-var windyAPI      = null;
+var windyVisible = false;
+var windyLoaded  = false;
 
 function toggleWindy(){
   windyVisible = !windyVisible;
@@ -3106,45 +3103,25 @@ function toggleWindy(){
   panel.classList.toggle('visible', windyVisible);
   btn.classList.toggle('on', windyVisible);
   if(windyVisible && !windyLoaded){
-    initWindyMap();
+    var iframe = document.getElementById('windy-iframe');
+    iframe.src = iframe.getAttribute('data-src');
+    windyLoaded = true;
+    // Hide loading indicator when iframe signals ready
+    window.addEventListener('message', function onWindyReady(e){
+      if(e.data && e.data.type === 'windyReady'){
+        var loading = document.getElementById('windy-loading');
+        if(loading) loading.style.display = 'none';
+        window.removeEventListener('message', onWindyReady);
+      }
+    });
   }
 }
 
-function initWindyMap(){
-  // Rename placeholder div to 'windy' just before init — avoids CSS conflict with Leaflet
-  var placeholder = document.getElementById('windy-map-placeholder');
-  if(placeholder) placeholder.id = 'windy';
-
-  // Load Windy API boot script (brings its own Leaflet 1.4)
-  var s = document.createElement('script');
-  s.src = 'https://api.windy.com/assets/map-forecast/libBoot.js';
-  s.onload = function(){
-    var options = {
-      key: WINDY_API_KEY,
-      verbose: false,
-      lat: -27,
-      lon: 134,
-      zoom: 4,
-    };
-    windyInit(options, function(api){
-      windyAPI = api;
-      windyLoaded = true;
-      // Set default layer to wind
-      api.store.set('overlay', 'wind');
-      // Hide loading indicator
-      var loading = document.getElementById('windy-loading');
-      if(loading) loading.style.display = 'none';
-    });
-  };
-  s.onerror = function(){
-    var loading = document.getElementById('windy-loading');
-    if(loading) loading.textContent = '⚠ Failed to load Windy API';
-  };
-  document.head.appendChild(s);
-}
-
 function setWindyLayer(layer){
-  if(windyAPI) windyAPI.store.set('overlay', layer);
+  var iframe = document.getElementById('windy-iframe');
+  if(iframe && iframe.contentWindow){
+    iframe.contentWindow.postMessage({ type: 'setLayer', layer: layer }, '*');
+  }
 }
 
 // Drag support for Windy panel
