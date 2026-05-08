@@ -3253,7 +3253,8 @@ function restoreFromFit(which){
   btn.classList.remove('active');
   btn.textContent = '⤢ Fit';
   _fitState[which] = false;
-}document.getElementById("weather-panel").classList.toggle("collapsed");setTimeout(function(){if(map)map.invalidateSize();},260);}
+}
+function toggleWeatherPanel(){document.getElementById("weather-panel").classList.toggle("collapsed");setTimeout(function(){if(map)map.invalidateSize();},260);}
 
 
 // ── WATCHTOWER: RISK ASSESSMENT ENGINE ──────────────────────────────────────
