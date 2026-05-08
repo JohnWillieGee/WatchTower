@@ -838,15 +838,15 @@ function runDiagnostics(){
     })
     .then(function(data){
       var ms = Date.now() - start;
-      var genUtc = data.generated_utc ? new Date(data.generated_utc) : null;
-      var ageMin = genUtc ? Math.round((Date.now() - genUtc) / 60000) : null;
+      var checkedUtc = (data.last_checked_utc || data.generated_utc) ? new Date(data.last_checked_utc || data.generated_utc) : null;
+      var ageMin = checkedUtc ? Math.round((Date.now() - checkedUtc) / 60000) : null;
       var ageStr = ageMin !== null ? ageMin+'m ago' : 'unknown';
       var n = (data.warnings||[]).length;
       var errors = Object.keys(data.fetch_errors||{});
 
       var html = '<b>live_data.json</b> &mdash; <span style="color:var(--fetch-ok)">&#10003; readable</span><br>';
       html += 'Loaded in '+ms+'ms<br>';
-      html += 'Generated: '+(genUtc ? genUtc.toLocaleString('en-AU',{timeZone:'Australia/Sydney'}) : 'n/a')+' ('+ageStr+')<br>';
+      html += 'Last checked: '+(checkedUtc ? checkedUtc.toLocaleString('en-AU',{timeZone:'Australia/Sydney'}) : 'n/a')+' ('+ageStr+')<br>';
       html += 'Active warnings: <b>'+n+'</b><br>';
       if(errors.length){
         html += '&#9888; Fetch errors: '+errors.join(', ')+'<br>';
@@ -854,10 +854,10 @@ function runDiagnostics(){
         html += 'All state feeds fetched OK<br>';
       }
       html += '<br>';
-      if(ageMin !== null && ageMin > 20){
-        html += '<span style="color:orange">&#9888; Data is '+ageMin+'m old — Action may have stalled</span>';
+      if(ageMin !== null && ageMin > 40){
+        html += '<span style="color:orange">&#9888; Data is '+ageMin+'m old — local fetcher may have stalled</span>';
       } else {
-        html += '<span style="color:var(--fetch-ok)">&#10003; GitHub Action pipeline operational</span>';
+        html += '<span style="color:var(--fetch-ok)">&#10003; Local fetcher pipeline operational</span>';
       }
       el.innerHTML = html;
     })
@@ -2104,9 +2104,9 @@ function fetchBOMWarnings() {
       var now = new Date();
       var ts = now.toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit',timeZone:'Australia/Sydney'})+' AEST';
 
-      // Parse generated time from JSON
-      var genUtc = data.generated_utc ? new Date(data.generated_utc) : null;
-      var ageMin = genUtc ? Math.round((now - genUtc) / 60000) : null;
+      // Parse last checked time from JSON (last_checked_utc always updates; fall back to generated_utc for older files)
+      var checkedUtc = (data.last_checked_utc || data.generated_utc) ? new Date(data.last_checked_utc || data.generated_utc) : null;
+      var ageMin = checkedUtc ? Math.round((now - checkedUtc) / 60000) : null;
       var ageStr = ageMin !== null ? (ageMin < 2 ? 'just now' : ageMin+'m ago') : '';
 
       // Map live_data warnings into bomWarnings format
