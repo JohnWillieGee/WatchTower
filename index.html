@@ -3171,7 +3171,7 @@ function startResizeWindy(e){
   _windyResizeEl = document.getElementById('windy-panel');
   _windyResizeOX = e.clientX; _windyResizeOY = e.clientY;
   _windyResizeW = _windyResizeEl.offsetWidth; _windyResizeH = _windyResizeEl.offsetHeight;
-  document.getElementById('windy-map-placeholder') || document.getElementById('windy') || document.getElementById('windy-container')).style.pointerEvents = 'none';
+  document.getElementById('windy-container').style.pointerEvents = 'none';
   document.addEventListener('mousemove', onResizeWindy);
   document.addEventListener('mouseup', stopResizeWindy);
 }
@@ -3183,7 +3183,7 @@ function onResizeWindy(e){
   _windyResizeEl.style.height = h + 'px';
 }
 function stopResizeWindy(){
-  (document.getElementById('windy-map-placeholder') || document.getElementById('windy') || document.getElementById('windy-container')).style.pointerEvents = '';
+  document.getElementById('windy-container').style.pointerEvents = '';
   document.removeEventListener('mousemove', onResizeWindy);
   document.removeEventListener('mouseup', stopResizeWindy);
   _windyResizeEl = null;
