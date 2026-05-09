@@ -3539,14 +3539,38 @@ function computeRisks() {
       bomWarnings.filter(function(w) {
         return !w.cancelled && RELEVANT_WARN_TYPES.indexOf(w.type) !== -1;
       }).forEach(function(w) {
-        // Check if warning district matches site's BOM districts
-        // Use coords proximity as fallback (warning coords already matched to district)
-        var distToWarn = haversineKm(site.lat, site.lon, w.coords[0], w.coords[1]);
-        var inDistrict = distToWarn < 300; // rough district proximity fallback
+        // Primary match: check if the warning's BOM district polygon contains this site
+        // Uses same BOM_PW_DISTRICTS GeoJSON as FDR for consistency
+        var inDistrict = false;
+        if (BOM_PW_DISTRICTS && w.state) {
+          BOM_PW_DISTRICTS.features.forEach(function(feat) {
+            if (inDistrict) return;
+            var dstate = (feat.properties.state || '').toUpperCase();
+            var dname  = (feat.properties.name  || '').toLowerCase();
+            var wstate = w.state.toUpperCase();
+            // District must be in same state as warning
+            if (dstate !== wstate) return;
+            // District name must appear in warning title or districts field
+            var searchText = ((w.districts || '') + ' ' + (w.title || '')).toLowerCase();
+            if (dname.length > 3 && searchText.indexOf(dname) !== -1) {
+              // Check if site is inside this district polygon
+              if (pointInGeoJSONPolygon(site.lat, site.lon, feat.geometry)) {
+                inDistrict = true;
+              }
+            }
+          });
+        }
 
-        // Better: check if warning state matches site state
-        var stateMatch = !w.state || w.state.toUpperCase() === (site.state||'').toUpperCase();
-        if (!stateMatch && distToWarn > 400) return;
+        // Fallback: state match + rough 300km proximity (catches warnings with no district name)
+        if (!inDistrict) {
+          var stateMatch = !w.state || w.state.toUpperCase() === (site.state||'').toUpperCase();
+          var distToWarn = haversineKm(site.lat, site.lon, w.coords[0], w.coords[1]);
+          if (!stateMatch && distToWarn > 400) return;
+          if (distToWarn > 300) return;
+          inDistrict = true; // fallback matched
+        }
+
+        if (!inDistrict) return;
 
         var lvl = RISK_LEVEL.NONE;
         var wtype = w.type;
