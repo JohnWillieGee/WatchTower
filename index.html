@@ -459,7 +459,7 @@ header{background:var(--panel);border-bottom:1px solid var(--border);padding:0 1
       <button class="map-btn" id="btn-radar" onclick="toggleRadarLayer()">&#127783; Radar</button>
       <button class="map-btn" id="btn-lightning" onclick="toggleLightning()">&#9889; Lightning</button>
       <button class="map-btn" id="btn-windy" onclick="toggleWindy()">&#127788; Wind</button>
-      <button class="map-btn" id="btn-ducting" onclick="toggleDucting()">&#128225; Ducting</button>
+      <button class="map-btn" id="btn-ducting" onclick="openDucting()">&#128225; Ducting</button>
     </div>
     <div id="map"></div>
     <div id="radar-controls" class="hidden">
@@ -517,25 +517,6 @@ header{background:var(--panel);border-bottom:1px solid var(--border);padding:0 1
         <div id="windy-loading">&#127788; Loading wind data...</div>
       </div>
       <div id="windy-resize" onmousedown="startResizeWindy(event)" title="Drag to resize"></div>
-    </div>
-    <div id="ducting-panel">
-      <div id="ducting-panel-head" onmousedown="startDragDucting(event)">
-        &#128225; DUCTING — VHF Tropospheric Propagation (vhf.dxview.org)
-        <span>APRS-IS data &nbsp;|&nbsp; Personal/non-commercial use only</span>
-        <div style="display:flex;gap:6px;align-items:center;">
-          <label style="font-size:9px;color:var(--text3);display:flex;align-items:center;gap:3px;">
-            &#9681;<input type="range" id="ducting-opacity" min="20" max="100" value="100"
-              oninput="onOpacityChange('ducting')" onmousedown="event.stopPropagation()"
-              style="width:50px;accent-color:#00ff88;cursor:pointer;vertical-align:middle;">
-          </label>
-          <button class="fit-map-btn" id="ducting-fit-btn" onclick="toggleFitToMap('ducting')" title="Fit to map / restore">&#11020; Fit</button>
-          <button id="ducting-close" onclick="toggleDucting()" title="Close">&#10005;</button>
-        </div>
-      </div>
-      <iframe id="ducting-iframe" src="about:blank"
-        data-src="https://vhf.dxview.org/map?center=-30.09,139.86,4.0"
-        allowfullscreen></iframe>
-      <div id="ducting-resize" onmousedown="startResizeDucting(event)" title="Drag to resize"></div>
     </div>
     <div id="legend">
       <h4>Broadcast Sites</h4>
@@ -3208,9 +3189,9 @@ function stopResizeWindy(){
 
 // ── FIT TO MAP ────────────────────────────────────────────────────────────────
 // Tracks which panels are in overlay mode
-var _fitState = { lightning: false, windy: false, ducting: false };
+var _fitState = { lightning: false, windy: false };
 // Saved positions/sizes to restore when snapping back
-var _fitSaved = { lightning: {}, windy: {}, ducting: {} };
+var _fitSaved = { lightning: {}, windy: {} };
 
 function toggleFitToMap(which){
   _fitState[which] = !_fitState[which];
@@ -3270,17 +3251,6 @@ function applyFitToMap(which){
     }
   }
 
-  // Sync Ducting iframe URL to main map position/zoom
-  if(which === 'ducting' && map){
-    var centre  = map.getCenter();
-    var zoom    = Math.round(map.getZoom());
-    var iframe  = document.getElementById('ducting-iframe');
-    if(iframe){
-      iframe.src = 'https://vhf.dxview.org/map?center=' +
-        centre.lat.toFixed(4) + ',' + centre.lng.toFixed(4) + ',' + zoom + '.0';
-    }
-  }
-
   // Snap back if user pans or zooms the main map
   if(map){
     map.once('movestart', function(){ if(_fitState[which]) restoreFromFit(which); });
@@ -3316,70 +3286,16 @@ function onOpacityChange(which){
     document.getElementById(which+'-panel').style.opacity = val;
   }
 }
-// ── DUCTING PANEL ─────────────────────────────────────────────────────────────
-var ductingVisible = false;
-var ductingLoaded  = false;
-
-function toggleDucting(){
-  ductingVisible = !ductingVisible;
-  var panel = document.getElementById('ducting-panel');
-  var btn   = document.getElementById('btn-ducting');
-  panel.classList.toggle('visible', ductingVisible);
-  btn.classList.toggle('on', ductingVisible);
-  if(ductingVisible && !ductingLoaded){
-    var iframe = document.getElementById('ducting-iframe');
-    iframe.src = iframe.getAttribute('data-src');
-    ductingLoaded = true;
+// ── DUCTING ───────────────────────────────────────────────────────────────────
+function openDucting(){
+  var lat  = -30.09, lon = 139.86, zoom = 4;
+  if(map){
+    var c = map.getCenter();
+    lat  = c.lat.toFixed(4);
+    lon  = c.lng.toFixed(4);
+    zoom = Math.round(map.getZoom());
   }
-}
-
-// Drag support
-var _ductingDragEl = null, _ductingDragOX = 0, _ductingDragOY = 0;
-function startDragDucting(e){
-  var panel = document.getElementById('ducting-panel');
-  _ductingDragEl = panel;
-  _ductingDragOX = e.clientX - panel.offsetLeft;
-  _ductingDragOY = e.clientY - panel.offsetTop;
-  panel.style.right = 'auto';
-  document.getElementById('ducting-iframe').style.pointerEvents = 'none';
-  document.addEventListener('mousemove', onDragDucting);
-  document.addEventListener('mouseup', stopDragDucting);
-}
-function onDragDucting(e){
-  if(!_ductingDragEl) return;
-  _ductingDragEl.style.left = (e.clientX - _ductingDragOX) + 'px';
-  _ductingDragEl.style.top  = (e.clientY - _ductingDragOY) + 'px';
-}
-function stopDragDucting(){
-  _ductingDragEl = null;
-  document.getElementById('ducting-iframe').style.pointerEvents = '';
-  document.removeEventListener('mousemove', onDragDucting);
-  document.removeEventListener('mouseup', stopDragDucting);
-}
-
-// Resize support
-var _ductingResizeEl = null, _ductingResizeOX = 0, _ductingResizeOY = 0, _ductingResizeW = 0, _ductingResizeH = 0;
-function startResizeDucting(e){
-  e.preventDefault();
-  _ductingResizeEl = document.getElementById('ducting-panel');
-  _ductingResizeOX = e.clientX; _ductingResizeOY = e.clientY;
-  _ductingResizeW = _ductingResizeEl.offsetWidth; _ductingResizeH = _ductingResizeEl.offsetHeight;
-  document.getElementById('ducting-iframe').style.pointerEvents = 'none';
-  document.addEventListener('mousemove', onResizeDucting);
-  document.addEventListener('mouseup', stopResizeDucting);
-}
-function onResizeDucting(e){
-  if(!_ductingResizeEl) return;
-  var w = Math.max(320, _ductingResizeW + (e.clientX - _ductingResizeOX));
-  var h = Math.max(240, _ductingResizeH + (e.clientY - _ductingResizeOY));
-  _ductingResizeEl.style.width  = w + 'px';
-  _ductingResizeEl.style.height = h + 'px';
-}
-function stopResizeDucting(){
-  document.getElementById('ducting-iframe').style.pointerEvents = '';
-  document.removeEventListener('mousemove', onResizeDucting);
-  document.removeEventListener('mouseup', stopResizeDucting);
-  _ductingResizeEl = null;
+  window.open('https://vhf.dxview.org/map?center=' + lat + ',' + lon + ',' + zoom + '.0', '_blank');
 }
 
 function toggleWeatherPanel(){document.getElementById("weather-panel").classList.toggle("collapsed");setTimeout(function(){if(map)map.invalidateSize();},260);}
