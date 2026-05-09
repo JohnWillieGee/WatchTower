@@ -3661,13 +3661,14 @@ function _drawSiteRing(r, col) {
              'style="width:'+size+'px;height:'+size+'px;border-color:'+col+'"></div>';
   var siteName = site.name.replace(/^\d+\s+/, '');
   var topReason = r.reasons[0];
-  var popupHtml =
-    "<div style='font-family:monospace;font-size:11px;min-width:180px'>" +
-    "<div style='font-weight:700;font-size:13px;color:var(--text);margin-bottom:4px'>" + siteName + "</div>" +
-    "<div style='margin-bottom:6px'>" +
-      "<span style='background:" + col + ";color:#000;font-weight:700;font-size:9px;padding:1px 5px;border-radius:3px'>" +
-      RISK_LABEL[r.level] + "</span>" +
-      (site.state ? "<span style='margin-left:5px;color:var(--text2);font-size:9px'>" + site.state + (site.town ? " &bull; " + site.town : "") + "</span>" : "") +
+
+  // Build full site popup (same as normal click) then append risk section
+  var siteHtml = buildSitePopup(site);
+  var riskHtml =
+    "<div style='margin-top:8px;border-top:2px solid " + col + ";padding-top:6px'>" +
+    "<div style='display:flex;align-items:center;gap:5px;margin-bottom:5px'>" +
+      "<span style='background:" + col + ";color:#000;font-weight:700;font-size:9px;padding:1px 6px;border-radius:3px'>" + RISK_LABEL[r.level] + "</span>" +
+      "<span style='font-size:9px;color:var(--text3);font-weight:700;letter-spacing:0.5px'>ACTIVE RISK</span>" +
     "</div>" +
     r.reasons.slice(0,4).map(function(rs){
       return "<div style='border-top:1px solid var(--border);padding:3px 0;font-size:10px;color:var(--text2)'>" +
@@ -3678,10 +3679,12 @@ function _drawSiteRing(r, col) {
     (r.reasons.length>4?"<div style='font-size:9px;color:var(--text2);padding-top:3px'>+"+(r.reasons.length-4)+" more</div>":"") +
     "</div>";
 
+  var popupHtml = siteHtml + riskHtml;
+
   var marker = L.marker([site.lat, site.lon], {
     icon: L.divIcon({ html:html, className:'', iconSize:[size,size], iconAnchor:[size/2,size/2] }),
     zIndexOffset: 500, interactive: true
-  }).bindPopup(popupHtml, { className:'ba-popup risk-popup', maxWidth:260 });
+  }).bindPopup(popupHtml, { className:'ba-popup risk-popup', maxWidth:480 });
   if (riskLabelsEnabled) {
     marker.bindTooltip(siteName, { permanent: true, direction:'top', offset:[0,-(size/2+4)], className:'risk-tooltip' });
   }
