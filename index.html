@@ -172,7 +172,16 @@ header{background:var(--panel);border-bottom:1px solid var(--border);padding:0 1
 #lightning-iframe{flex:1;border:none;width:100%;height:100%;display:block;}
 #lightning-resize{position:absolute;bottom:0;right:0;width:16px;height:16px;cursor:nwse-resize;z-index:1003;background:linear-gradient(135deg,transparent 40%,#9775fa 40%,#9775fa 55%,transparent 55%,transparent 70%,#9775fa 70%,#9775fa 85%,transparent 85%);opacity:0.6;}
 #lightning-resize:hover{opacity:1;}
-/* windy overlay */
+/* ducting overlay */
+#ducting-panel{position:absolute;top:50px;right:50px;z-index:1002;width:560px;height:440px;border-radius:var(--radius);overflow:hidden;border:1px solid #00ff88;box-shadow:0 4px 20px rgba(0,0,0,0.7);display:none;flex-direction:column;}
+#ducting-panel.visible{display:flex;}
+#ducting-panel-head{background:var(--panel);border-bottom:1px solid #00ff88;padding:5px 10px;display:flex;align-items:center;justify-content:space-between;font-size:10px;font-weight:700;letter-spacing:1px;color:#00ff88;flex-shrink:0;cursor:move;}
+#ducting-panel-head span{font-size:9px;color:var(--text3);font-weight:400;letter-spacing:0;}
+#ducting-close{background:none;border:none;color:#00ff88;cursor:pointer;font-size:14px;padding:0 2px;line-height:1;}
+#ducting-close:hover{color:#fff;}
+#ducting-iframe{flex:1;border:none;width:100%;height:100%;display:block;}
+#ducting-resize{position:absolute;bottom:0;right:0;width:16px;height:16px;cursor:nwse-resize;z-index:1003;background:linear-gradient(135deg,transparent 40%,#00ff88 40%,#00ff88 55%,transparent 55%,transparent 70%,#00ff88 70%,#00ff88 85%,transparent 85%);opacity:0.6;}
+#ducting-resize:hover{opacity:1;}
 #windy-panel{position:absolute;top:50px;right:50px;z-index:1002;width:560px;height:440px;border-radius:var(--radius);overflow:hidden;border:1px solid #00c8ff;box-shadow:0 4px 20px rgba(0,0,0,0.7);display:none;flex-direction:column;}
 #windy-panel.visible{display:flex;}
 #windy-panel-head{background:var(--panel);border-bottom:1px solid #00c8ff;padding:5px 10px;display:flex;align-items:center;justify-content:space-between;font-size:10px;font-weight:700;letter-spacing:1px;color:#00c8ff;flex-shrink:0;cursor:move;}
@@ -450,6 +459,7 @@ header{background:var(--panel);border-bottom:1px solid var(--border);padding:0 1
       <button class="map-btn" id="btn-radar" onclick="toggleRadarLayer()">&#127783; Radar</button>
       <button class="map-btn" id="btn-lightning" onclick="toggleLightning()">&#9889; Lightning</button>
       <button class="map-btn" id="btn-windy" onclick="toggleWindy()">&#127788; Wind</button>
+      <button class="map-btn" id="btn-ducting" onclick="toggleDucting()">&#128225; Ducting</button>
     </div>
     <div id="map"></div>
     <div id="radar-controls" class="hidden">
@@ -507,6 +517,25 @@ header{background:var(--panel);border-bottom:1px solid var(--border);padding:0 1
         <div id="windy-loading">&#127788; Loading wind data...</div>
       </div>
       <div id="windy-resize" onmousedown="startResizeWindy(event)" title="Drag to resize"></div>
+    </div>
+    <div id="ducting-panel">
+      <div id="ducting-panel-head" onmousedown="startDragDucting(event)">
+        &#128225; DUCTING — VHF Tropospheric Propagation (vhf.dxview.org)
+        <span>APRS-IS data &nbsp;|&nbsp; Personal/non-commercial use only</span>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <label style="font-size:9px;color:var(--text3);display:flex;align-items:center;gap:3px;">
+            &#9681;<input type="range" id="ducting-opacity" min="20" max="100" value="100"
+              oninput="onOpacityChange('ducting')" onmousedown="event.stopPropagation()"
+              style="width:50px;accent-color:#00ff88;cursor:pointer;vertical-align:middle;">
+          </label>
+          <button class="fit-map-btn" id="ducting-fit-btn" onclick="toggleFitToMap('ducting')" title="Fit to map / restore">&#11020; Fit</button>
+          <button id="ducting-close" onclick="toggleDucting()" title="Close">&#10005;</button>
+        </div>
+      </div>
+      <iframe id="ducting-iframe" src="about:blank"
+        data-src="https://vhf.dxview.org/map?center=-30.09,139.86,4.0"
+        allowfullscreen></iframe>
+      <div id="ducting-resize" onmousedown="startResizeDucting(event)" title="Drag to resize"></div>
     </div>
     <div id="legend">
       <h4>Broadcast Sites</h4>
@@ -3179,9 +3208,9 @@ function stopResizeWindy(){
 
 // ── FIT TO MAP ────────────────────────────────────────────────────────────────
 // Tracks which panels are in overlay mode
-var _fitState = { lightning: false, windy: false };
+var _fitState = { lightning: false, windy: false, ducting: false };
 // Saved positions/sizes to restore when snapping back
-var _fitSaved = { lightning: {}, windy: {} };
+var _fitSaved = { lightning: {}, windy: {}, ducting: {} };
 
 function toggleFitToMap(which){
   _fitState[which] = !_fitState[which];
@@ -3241,6 +3270,17 @@ function applyFitToMap(which){
     }
   }
 
+  // Sync Ducting iframe URL to main map position/zoom
+  if(which === 'ducting' && map){
+    var centre  = map.getCenter();
+    var zoom    = Math.round(map.getZoom());
+    var iframe  = document.getElementById('ducting-iframe');
+    if(iframe){
+      iframe.src = 'https://vhf.dxview.org/map?center=' +
+        centre.lat.toFixed(4) + ',' + centre.lng.toFixed(4) + ',' + zoom + '.0';
+    }
+  }
+
   // Snap back if user pans or zooms the main map
   if(map){
     map.once('movestart', function(){ if(_fitState[which]) restoreFromFit(which); });
@@ -3276,6 +3316,72 @@ function onOpacityChange(which){
     document.getElementById(which+'-panel').style.opacity = val;
   }
 }
+// ── DUCTING PANEL ─────────────────────────────────────────────────────────────
+var ductingVisible = false;
+var ductingLoaded  = false;
+
+function toggleDucting(){
+  ductingVisible = !ductingVisible;
+  var panel = document.getElementById('ducting-panel');
+  var btn   = document.getElementById('btn-ducting');
+  panel.classList.toggle('visible', ductingVisible);
+  btn.classList.toggle('on', ductingVisible);
+  if(ductingVisible && !ductingLoaded){
+    var iframe = document.getElementById('ducting-iframe');
+    iframe.src = iframe.getAttribute('data-src');
+    ductingLoaded = true;
+  }
+}
+
+// Drag support
+var _ductingDragEl = null, _ductingDragOX = 0, _ductingDragOY = 0;
+function startDragDucting(e){
+  var panel = document.getElementById('ducting-panel');
+  _ductingDragEl = panel;
+  _ductingDragOX = e.clientX - panel.offsetLeft;
+  _ductingDragOY = e.clientY - panel.offsetTop;
+  panel.style.right = 'auto';
+  document.getElementById('ducting-iframe').style.pointerEvents = 'none';
+  document.addEventListener('mousemove', onDragDucting);
+  document.addEventListener('mouseup', stopDragDucting);
+}
+function onDragDucting(e){
+  if(!_ductingDragEl) return;
+  _ductingDragEl.style.left = (e.clientX - _ductingDragOX) + 'px';
+  _ductingDragEl.style.top  = (e.clientY - _ductingDragOY) + 'px';
+}
+function stopDragDucting(){
+  _ductingDragEl = null;
+  document.getElementById('ducting-iframe').style.pointerEvents = '';
+  document.removeEventListener('mousemove', onDragDucting);
+  document.removeEventListener('mouseup', stopDragDucting);
+}
+
+// Resize support
+var _ductingResizeEl = null, _ductingResizeOX = 0, _ductingResizeOY = 0, _ductingResizeW = 0, _ductingResizeH = 0;
+function startResizeDucting(e){
+  e.preventDefault();
+  _ductingResizeEl = document.getElementById('ducting-panel');
+  _ductingResizeOX = e.clientX; _ductingResizeOY = e.clientY;
+  _ductingResizeW = _ductingResizeEl.offsetWidth; _ductingResizeH = _ductingResizeEl.offsetHeight;
+  document.getElementById('ducting-iframe').style.pointerEvents = 'none';
+  document.addEventListener('mousemove', onResizeDucting);
+  document.addEventListener('mouseup', stopResizeDucting);
+}
+function onResizeDucting(e){
+  if(!_ductingResizeEl) return;
+  var w = Math.max(320, _ductingResizeW + (e.clientX - _ductingResizeOX));
+  var h = Math.max(240, _ductingResizeH + (e.clientY - _ductingResizeOY));
+  _ductingResizeEl.style.width  = w + 'px';
+  _ductingResizeEl.style.height = h + 'px';
+}
+function stopResizeDucting(){
+  document.getElementById('ducting-iframe').style.pointerEvents = '';
+  document.removeEventListener('mousemove', onResizeDucting);
+  document.removeEventListener('mouseup', stopResizeDucting);
+  _ductingResizeEl = null;
+}
+
 function toggleWeatherPanel(){document.getElementById("weather-panel").classList.toggle("collapsed");setTimeout(function(){if(map)map.invalidateSize();},260);}
 
 
