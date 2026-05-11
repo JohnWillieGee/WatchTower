@@ -985,8 +985,8 @@ function restoreSections(){
 }
 
 // ── BOOT ──
-var STATES_GEO = null;
-var FDR_GEO = null;
+var STATES_GEO = (typeof STATES_GEO !== "undefined" && STATES_GEO) ? STATES_GEO : null;
+var FDR_GEO = (typeof FDR_GEO !== "undefined" && FDR_GEO) ? FDR_GEO : null;
 var FDR_AAC_INDEX = {};
 
 var isDark = (localStorage.getItem("au-wx-theme")||"dark")==="dark";
@@ -2042,7 +2042,7 @@ var STATE_CENTRES_BOM = {
 
 // Active warnings store: [{type, state, productId, title, districts, text, issuedAt, color, icon}]
 var bomWarnings = [];
-var BOM_PW_DISTRICTS = null; // loaded from d-bom-pw-districts script tag
+var BOM_PW_DISTRICTS = (typeof BOM_PW_DISTRICTS !== "undefined" && BOM_PW_DISTRICTS) ? BOM_PW_DISTRICTS : null; // loaded from d-bom-pw-districts script tag
 var curWarnType = "all";
 var warnFetchTotal = 0;
 // BOM_PW_DISTRICTS loaded from external watchtower_geodata_pw.js
