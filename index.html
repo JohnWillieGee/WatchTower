@@ -264,8 +264,8 @@ header{background:var(--panel);border-bottom:1px solid var(--border);padding:0 1
 .risk-ack-btn{flex:1;background:var(--panel2);border:1px solid var(--border);color:var(--text);padding:6px;border-radius:var(--radius);cursor:pointer;font-size:10px;font-family:monospace;}
 .risk-ack-btn:hover{background:var(--border);}
 .risk-fly-btn{flex:1;background:var(--accent2);border:none;color:#000;padding:6px;border-radius:var(--radius);cursor:pointer;font-size:10px;font-weight:700;font-family:monospace;}
-@keyframes riskFlash{0%,100%{opacity:1;}50%{opacity:.3;}}
-.risk-alert-flash{animation:riskFlash .7s ease-in-out infinite;}
+@keyframes riskFlash{0%,100%{border-color:var(--flash-color);box-shadow:0 8px 32px rgba(0,0,0,.6);}50%{border-color:transparent;box-shadow:0 8px 32px rgba(0,0,0,.6);}}
+.risk-alert-flash{animation:riskFlash 2s ease-in-out infinite;}
 
 .risk-rules-bar{border-top:2px solid var(--border);flex-shrink:0;background:var(--panel);}
 .risk-rules-hdr{padding:5px 14px;font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text2);cursor:pointer;display:flex;justify-content:space-between;align-items:center;transition:background .15s;}
@@ -3859,10 +3859,13 @@ var riskAlertActive = false;
 
 function checkRiskAlerts() {
   riskAlertQueue = [];
+
+  // Group alerts by warning event rather than per site
+  // Key = level|type|detail (identifies the warning event)
+  var eventMap = {};
+
   riskResults.forEach(function(r) {
     var site = r.site;
-    var needsAlert = false;
-    var alertReasons = [];
 
     // Fire threats at any level
     var fireReasons = r.reasons.filter(function(rs) {
@@ -3873,24 +3876,38 @@ function checkRiskAlerts() {
              rs.src.includes('QLD') || rs.src.includes('SA') ||
              rs.src.includes('WA') || rs.src.includes('TAS'));
     });
-    if (fireReasons.length > 0 && r.level >= RISK_LEVEL.DIRECT) {
-      needsAlert = true;
-      alertReasons = alertReasons.concat(fireReasons);
-    }
 
     // BOM storm/severe warnings for AM/MF sites
     var stormAMReasons = r.reasons.filter(function(rs) { return rs.isStormAM; });
-    if (stormAMReasons.length > 0) {
-      needsAlert = true;
-      alertReasons = alertReasons.concat(stormAMReasons);
+
+    var alertReasons = [];
+    if (fireReasons.length > 0 && r.level >= RISK_LEVEL.DIRECT) alertReasons = alertReasons.concat(fireReasons);
+    if (stormAMReasons.length > 0) alertReasons = alertReasons.concat(stormAMReasons);
+    if (alertReasons.length === 0) return;
+
+    // Build event key from the primary reason — identifies the warning event
+    var primaryReason = alertReasons[0];
+    var eventKey = r.level + '|' + (primaryReason.type || '') + '|' + (primaryReason.detail || '').substring(0, 60);
+
+    if (!eventMap[eventKey]) {
+      eventMap[eventKey] = {
+        level: r.level,
+        reasons: alertReasons,
+        eventKey: eventKey,
+        sites: [],
+        isFireStorm: stormAMReasons.length > 0
+      };
     }
+    // Add site if not already in this event's list
+    var alreadyAdded = eventMap[eventKey].sites.some(function(s){ return s.name === site.name; });
+    if (!alreadyAdded) eventMap[eventKey].sites.push(site);
+  });
 
-    if (!needsAlert) return;
-    // Use a stable key: site + level + warning type (not full title which can change)
-    var ackKey = site.name + '|' + r.level + '|' + (alertReasons[0].type || '') + '|' + (alertReasons[0].detail || '').substring(0, 40);
-    if (riskAcknowledged.has(ackKey)) return;
-
-    riskAlertQueue.push({ site: site, level: r.level, reasons: alertReasons, ackKey: ackKey });
+  // Filter out already-acknowledged events and push to queue
+  Object.values(eventMap).forEach(function(event) {
+    if (!riskAcknowledged.has(event.eventKey)) {
+      riskAlertQueue.push(event);
+    }
   });
 
   if (riskAlertQueue.length > 0 && !riskAlertActive) showNextRiskAlert();
@@ -3901,44 +3918,62 @@ function showNextRiskAlert() {
   riskAlertActive = true;
   var item = riskAlertQueue.shift();
   var col = RISK_COLOR[item.level];
-  var isFireThreat = item.reasons.some(function(r){
-    return r.src && (r.src.includes('RFS')||r.src.includes('QFD')||r.src.includes('CFS')||
-           r.src.includes('DFES')||r.src.includes('EMV')||r.src.includes('TasALERT')||
-           r.src.includes('NSW')||r.src.includes('VIC')||r.src.includes('QLD')||
-           r.src.includes('SA')||r.src.includes('WA')||r.src.includes('TAS'));
-  });
-  var isPulse = (isFireThreat && item.level >= RISK_LEVEL.DIRECT) ||
-    item.level >= RISK_LEVEL.IMPACTED ||
-    item.reasons.some(function(r){return r.isStormAM;});
-  var isFireStorm = item.reasons.some(function(r){ return r.isStormAM; });
-  var typeIcon = isFireStorm ? '⛈ STORM WARNING — AM/MF SITE' : '🔥 FIRE THREAT';
 
-  var reasonHtml = item.reasons.slice(0,3).map(function(r) {
+  var isPulse = (item.level >= RISK_LEVEL.DIRECT) || item.isFireStorm;
+  var typeIcon = item.isFireStorm ? '⛈ STORM WARNING — AM/MF SITE' : '🔥 FIRE THREAT';
+
+  var reasonHtml = item.reasons.slice(0,2).map(function(r) {
     return '<div style="font-size:10px;color:var(--text2);padding:2px 0;border-bottom:1px solid var(--border)">'+
            '<span style="color:'+RISK_COLOR[r.lvl]+';font-weight:700">'+RISK_LABEL[r.lvl]+'</span> &mdash; '+
            r.detail + '</div>';
   }).join('');
 
+  // Build site list
+  var siteListHtml = item.sites.map(function(s){
+    var isAM = siteHasAM(s);
+    var siteName = s.name.replace(/^\d+\s+/, '');
+    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--border);font-size:10px">' +
+      '<span style="color:var(--text);font-weight:600">' + siteName +
+      (isAM ? '<span class="risk-am-badge">AM</span>' : '') + '</span>' +
+      '<span style="color:var(--text3);font-size:9px">' + (s.state||'') + (s.town?' &bull; '+s.town:'') + '</span>' +
+      '</div>';
+  }).join('');
+
+  var siteCount = item.sites.length;
+  var siteCountHtml = '<div style="font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin:8px 0 4px">' +
+    siteCount + ' site' + (siteCount > 1 ? 's' : '') + ' at risk</div>';
+
   var html = '<div id="risk-alert-popup" class="risk-alert-popup' + (isPulse?' risk-alert-flash':'') + '" '+
-             'style="border-color:'+col+'">' +
+             'style="border-color:'+col+';--flash-color:'+col+'">' +
     '<div class="risk-alert-type" style="color:'+col+'">' + typeIcon + '</div>' +
-    '<div class="risk-alert-site">' + item.site.name + '</div>' +
-    '<div class="risk-alert-state">' + (item.site.state||'') + (item.site.town?' &bull; '+item.site.town:'') + '</div>' +
     '<div class="risk-alert-reasons">' + reasonHtml + '</div>' +
-    '<div class="risk-alert-actions">' +
+    siteCountHtml + siteListHtml +
+    '<div class="risk-alert-actions" style="margin-top:10px">' +
       '<button class="risk-ack-btn" onclick="acknowledgeRiskAlert(this)">Acknowledge</button>' +
-      '<button class="risk-fly-btn" onclick="flyToRiskSite('+item.site.lat+','+item.site.lon+')">Go to site</button>' +
+      '<button class="risk-fly-btn" onclick="flyToWarning()">Go to warning</button>' +
     '</div>' +
   '</div>';
 
   var existing = document.getElementById('risk-alert-popup');
   if (existing) existing.remove();
-  // Build via DOM so we can attach ackKey as a property (avoids apostrophe/quote issues in onclick)
   var tmp = document.createElement('div');
   tmp.innerHTML = html;
   var popup = tmp.firstChild;
-  popup._ackKey = item.ackKey;
+  popup._ackKey = item.eventKey;
+  popup._sites = item.sites;
   document.body.appendChild(popup);
+}
+
+function flyToWarning() {
+  var popup = document.getElementById('risk-alert-popup');
+  if (!popup || !popup._sites || popup._sites.length === 0) return;
+  var sites = popup._sites;
+  if (sites.length === 1) {
+    map.flyTo([sites[0].lat, sites[0].lon], 11, { duration: 0.8 });
+  } else {
+    var bounds = L.latLngBounds(sites.map(function(s){ return [s.lat, s.lon]; }));
+    map.flyToBounds(bounds, { padding: [60, 60], duration: 0.8, maxZoom: 10 });
+  }
 }
 
 function acknowledgeRiskAlert(btnEl) {
