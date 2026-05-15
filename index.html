@@ -168,6 +168,18 @@ header{background:var(--panel);border-bottom:1px solid var(--border);padding:0 1
 .radar-tick:hover{background:var(--accent2);}
 #radar-time-label{font-family:monospace;font-size:10px;color:var(--accent);min-width:40px;text-align:center;}
 #radar-age-label{font-size:9px;color:var(--text3);}
+/* bom radar */
+#bom-radar-controls{position:absolute;bottom:70px;left:50%;transform:translateX(-50%);z-index:1000;background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:6px 10px;display:flex;align-items:center;gap:8px;box-shadow:0 2px 12px var(--shadow);font-size:10px;color:var(--text2);white-space:nowrap;}
+#bom-radar-controls.hidden{display:none;}
+#bom-radar-play-btn{background:#0077cc;border:none;color:#fff;border-radius:4px;width:24px;height:24px;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+#bom-radar-product-label{font-size:9px;color:#0099ff;font-weight:700;min-width:60px;}
+#bom-radar-timeline{display:flex;align-items:center;gap:3px;}
+.bom-radar-tick{width:14px;height:8px;background:var(--border);border-radius:2px;cursor:pointer;transition:background .1s;}
+.bom-radar-tick.active{background:#0077cc;}
+.bom-radar-tick:hover{background:#0099ff;}
+#bom-radar-time-label{font-family:monospace;font-size:10px;color:#0099ff;min-width:40px;text-align:center;}
+#bom-radar-age-label{font-size:9px;color:var(--text3);}
+.map-btn.bom-radar-on{background:#0077cc;border-color:#0077cc;color:#fff;font-weight:500;}
 /* lightning */
 #lightning-panel{position:absolute;top:50px;right:50px;z-index:1002;width:480px;height:380px;border-radius:var(--radius);overflow:hidden;border:1px solid #9775fa;box-shadow:0 4px 20px rgba(0,0,0,0.7);display:none;flex-direction:column;}
 #lightning-panel.visible{display:flex;}
@@ -464,11 +476,19 @@ header{background:var(--panel);border-bottom:1px solid var(--border);padding:0 1
       <button class="map-btn" id="btn-alerts" onclick="toggleAlertsLayer()">&#128680; NSW Alerts</button>
       <button class="map-btn" id="btn-incidents" onclick="toggleIncidentsLayer()">&#9888; Incidents</button>
       <button class="map-btn" id="btn-radar" onclick="toggleRadarLayer()">&#127783; Radar</button>
+      <button class="map-btn" id="btn-bom-radar" onclick="toggleBomRadarLayer()">&#127783; BOM Radar</button>
       <button class="map-btn" id="btn-lightning" onclick="toggleLightning()">&#9889; Lightning</button>
       <button class="map-btn" id="btn-windy" onclick="toggleWindy()">&#127788; Wind</button>
       <button class="map-btn" id="btn-ducting" onclick="openDucting()">&#128225; Ducting</button>
     </div>
     <div id="map"></div>
+    <div id="bom-radar-controls" class="hidden">
+      <button id="bom-radar-play-btn" onclick="toggleBomRadarPlay()" title="Play/Pause">&#9654;</button>
+      <span id="bom-radar-product-label">BOM</span>
+      <div id="bom-radar-timeline"></div>
+      <span id="bom-radar-time-label">--:--</span>
+      <span id="bom-radar-age-label">BOM Radar</span>
+    </div>
     <div id="radar-controls" class="hidden">
       <button id="radar-play-btn" onclick="toggleRadarPlay()" title="Play/Pause">&#9654;</button>
       <div id="radar-timeline"></div>
@@ -1412,7 +1432,225 @@ setInterval(function(){
 }, 10 * 60 * 1000);
 
 
-function startFetching(){
+// ── BOM RADAR LAYER (GitHub Pages — weather-mapping-project) ─────────────
+// radar_meta.json structure:
+//   { "products": { "IDR00004": { "name":..., "bounds":[S,W,N,E], "frames":[{"file":"radar/IDRxxx_NN.png","utc":"ISO"},...] }, ... } }
+// Files are served from repo root: base URL + frame.file (which already includes "radar/" prefix)
+var BOM_RADAR_META_URL = 'https://raw.githubusercontent.com/JohnWillieGee/weather-mapping-project/main/radar/radar_meta.json';
+var BOM_RADAR_REPO_URL = 'https://raw.githubusercontent.com/JohnWillieGee/weather-mapping-project/main/';
+var BOM_RADAR_OPACITY  = 0.75;
+
+var bomRadarVisible    = false;
+var bomRadarLoaded     = false;
+var bomRadarMeta       = null;   // full parsed radar_meta.json
+var bomRadarProducts   = [];     // ordered array of {id, name, bounds, frames} built from meta.products object
+var bomRadarLayers     = [];     // L.imageOverlay layers for current product, one per frame
+var bomRadarCurrentIdx = 0;      // current frame index
+var bomRadarPlaying    = false;
+var bomRadarPlayTimer  = null;
+var bomRadarProductIdx = 0;      // which product is currently displayed (0 = national mosaic)
+
+function toggleBomRadarLayer(){
+  bomRadarVisible = !bomRadarVisible;
+  var btn = document.getElementById('btn-bom-radar');
+  if(bomRadarVisible){
+    btn.classList.add('bom-radar-on');
+    document.getElementById('bom-radar-controls').classList.remove('hidden');
+    if(!bomRadarLoaded) loadBomRadarMeta();
+    else showBomRadarFrame(bomRadarCurrentIdx);
+  } else {
+    btn.classList.remove('bom-radar-on');
+    document.getElementById('bom-radar-controls').classList.add('hidden');
+    bomRadarLayers.forEach(function(l){ if(map.hasLayer(l)) l.setOpacity(0); });
+    stopBomRadarPlay();
+  }
+}
+
+function loadBomRadarMeta(){
+  document.getElementById('bom-radar-age-label').textContent = 'Loading...';
+  fetch(BOM_RADAR_META_URL + '?t=' + Date.now())
+    .then(function(r){
+      if(!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    })
+    .then(function(meta){
+      bomRadarMeta = meta;
+      // meta.products is an object keyed by product ID — convert to ordered array
+      // National mosaic (IDR00004) first, then individual radars alphabetically
+      var prodObj = meta.products || {};
+      var ids = Object.keys(prodObj);
+      // Put national mosaic first
+      ids.sort(function(a,b){
+        if(a === 'IDR00004') return -1;
+        if(b === 'IDR00004') return 1;
+        return a.localeCompare(b);
+      });
+      bomRadarProducts = ids.map(function(id){
+        var p = prodObj[id];
+        return { id: id, name: p.name, bounds: p.bounds, frames: p.frames || [] };
+      });
+      if(!bomRadarProducts.length){
+        document.getElementById('bom-radar-age-label').textContent = 'No products';
+        return;
+      }
+      bomRadarLoaded = true;
+      bomRadarProductIdx = 0;
+      buildBomRadarProduct(bomRadarProductIdx);
+    })
+    .catch(function(e){
+      document.getElementById('bom-radar-age-label').textContent = 'Failed: ' + e.message;
+      console.warn('BOM radar meta load failed:', e);
+    });
+}
+
+function buildBomRadarProduct(pidx){
+  // Remove any existing overlay layers from map
+  bomRadarLayers.forEach(function(l){ if(map.hasLayer(l)) map.removeLayer(l); });
+  bomRadarLayers = [];
+
+  var product = bomRadarProducts[pidx];
+  if(!product){ return; }
+
+  var frames        = product.frames;
+  var bounds        = product.bounds; // [S, W, N, E]
+  var leafletBounds = [[bounds[0], bounds[1]], [bounds[2], bounds[3]]];
+  var totalFrames   = frames.length;
+  var loadedCount   = 0;
+  var frameReady    = new Array(totalFrames).fill(false);
+
+  document.getElementById('bom-radar-product-label').textContent = product.name;
+  document.getElementById('bom-radar-age-label').textContent = 'Loading...';
+
+  bomRadarLayers = frames.map(function(f, i){
+    // f.file already includes "radar/" prefix e.g. "radar/IDR00004_00.png"
+    var url = BOM_RADAR_REPO_URL + f.file + '?t=' + Math.floor(Date.now() / 60000);
+    var overlay = L.imageOverlay(url, leafletBounds, {
+      opacity: 0,
+      zIndex: 310,
+      crossOrigin: true,
+      attribution: 'Radar &copy; <a href="https://www.bom.gov.au" target="_blank">Bureau of Meteorology</a>'
+    });
+
+    function onFrameReady(idx){
+      if(!frameReady[idx]){
+        frameReady[idx] = true;
+        loadedCount++;
+        var pct = Math.round(loadedCount / totalFrames * 100);
+        document.getElementById('bom-radar-age-label').textContent = 'Loading ' + pct + '%';
+        if(loadedCount === totalFrames){
+          buildBomRadarTimeline();
+          bomRadarCurrentIdx = 0; // start from most-recent (frame 00 = newest)
+          showBomRadarFrame(bomRadarCurrentIdx);
+          startBomRadarPlay();
+        }
+      }
+    }
+
+    overlay.on('load',  (function(idx){ return function(){ onFrameReady(idx); }; })(i));
+    overlay.on('error', (function(idx){ return function(){ onFrameReady(idx); }; })(i));
+    overlay.addTo(map);
+    return overlay;
+  });
+}
+
+function buildBomRadarTimeline(){
+  var product = bomRadarProducts[bomRadarProductIdx];
+  var frames  = product ? product.frames : [];
+  var tl = document.getElementById('bom-radar-timeline');
+  tl.innerHTML = '';
+  // frames are ordered newest-first (00=newest) — display left=oldest, right=newest
+  var displayFrames = frames.slice().reverse();
+  displayFrames.forEach(function(f, displayIdx){
+    // map display index back to actual array index
+    var actualIdx = frames.length - 1 - displayIdx;
+    var tick = document.createElement('div');
+    tick.className = 'bom-radar-tick';
+    tick.title = formatBomRadarTime(f.utc);
+    tick.dataset.idx = actualIdx;
+    tick.onclick = (function(idx){ return function(){ jumpBomRadarFrame(idx); }; })(actualIdx);
+    tl.appendChild(tick);
+  });
+  updateBomRadarTicks();
+}
+
+function updateBomRadarTicks(){
+  var ticks = document.querySelectorAll('.bom-radar-tick');
+  ticks.forEach(function(t){
+    t.classList.toggle('active', parseInt(t.dataset.idx) === bomRadarCurrentIdx);
+  });
+}
+
+function showBomRadarFrame(idx){
+  bomRadarLayers.forEach(function(l, i){
+    l.setOpacity(i === idx ? BOM_RADAR_OPACITY : 0);
+  });
+  bomRadarCurrentIdx = idx;
+  updateBomRadarTicks();
+
+  var product = bomRadarProducts[bomRadarProductIdx];
+  if(product && product.frames[idx]){
+    var f = product.frames[idx];
+    document.getElementById('bom-radar-time-label').textContent = formatBomRadarTime(f.utc);
+    // frame 00 is the newest — show age for it
+    if(idx === 0){
+      var ageMin = Math.round((Date.now() - new Date(f.utc).getTime()) / 60000);
+      document.getElementById('bom-radar-age-label').textContent = 'BOM · ' + ageMin + 'm ago';
+    } else {
+      document.getElementById('bom-radar-age-label').textContent = 'BOM Radar';
+    }
+  }
+}
+
+function formatBomRadarTime(utcStr){
+  // utcStr is ISO e.g. "2026-05-15T22:18Z"
+  var d = new Date(utcStr);
+  return d.toLocaleTimeString('en-AU', {
+    hour: '2-digit', minute: '2-digit',
+    hour12: false, timeZone: 'Australia/Sydney'
+  });
+}
+
+function jumpBomRadarFrame(idx){
+  stopBomRadarPlay();
+  showBomRadarFrame(idx);
+}
+
+function startBomRadarPlay(){
+  if(bomRadarPlayTimer) clearInterval(bomRadarPlayTimer);
+  bomRadarPlaying = true;
+  document.getElementById('bom-radar-play-btn').innerHTML = '&#9646;&#9646;';
+  // Animate oldest→newest: frames array is newest-first so we count DOWN from last index to 0
+  bomRadarPlayTimer = setInterval(function(){
+    var product = bomRadarProducts[bomRadarProductIdx];
+    var len = product ? product.frames.length : 0;
+    if(!len) return;
+    // Play oldest→newest: start at len-1, step toward 0, loop back
+    var next = (bomRadarCurrentIdx <= 0) ? (len - 1) : (bomRadarCurrentIdx - 1);
+    showBomRadarFrame(next);
+  }, 500);
+}
+
+function stopBomRadarPlay(){
+  bomRadarPlaying = false;
+  if(bomRadarPlayTimer){ clearInterval(bomRadarPlayTimer); bomRadarPlayTimer = null; }
+  document.getElementById('bom-radar-play-btn').innerHTML = '&#9654;';
+}
+
+function toggleBomRadarPlay(){
+  if(bomRadarPlaying) stopBomRadarPlay();
+  else startBomRadarPlay();
+}
+
+// Refresh BOM radar every 10 minutes while layer is visible
+setInterval(function(){
+  if(bomRadarVisible && bomRadarLoaded){
+    stopBomRadarPlay();
+    bomRadarLoaded = false;
+    bomRadarLayers.forEach(function(l){ if(map.hasLayer(l)) map.removeLayer(l); });
+    bomRadarLayers = [];
+    loadBomRadarMeta();
+  }
+}, 10 * 60 * 1000);
   fetchFDR();
   fetchBOMWarnings();  // also loads all state incidents + NSW alert zones from live_data.json
   Object.keys(INC_FEEDS).forEach(fetchIncidents);  // skips all (all are live_data type)
