@@ -5,6 +5,7 @@
 <script src="https://johnwilliegee.github.io/WatchTower/watchtower_geodata_states.js"></script>
 <script src="https://johnwilliegee.github.io/WatchTower/watchtower_geodata_fdr.js"></script>
 <script src="https://johnwilliegee.github.io/WatchTower/watchtower_geodata_pw.js"></script>
+<script src="https://johnwilliegee.github.io/WatchTower/watchtower_geodata_marine.js"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>WatchTower — Broadcast Site Risk Map</title>
@@ -36,6 +37,7 @@ header{background:var(--panel);border-bottom:1px solid var(--border);padding:0 1
 .map-btn:hover{border-color:var(--accent);color:var(--accent);}.map-btn.on{background:var(--accent);border-color:var(--accent);color:#000;font-weight:500;}
 .map-btn.fire-on{background:#ff4444;border-color:#ff4444;color:#fff;font-weight:500;}
 .map-btn.fdr-on{background:#f57c00;border-color:#f57c00;color:#fff;font-weight:500;}
+.map-btn.marine-on{background:#0077cc;border-color:#0077cc;color:#fff;font-weight:500;}
 #legend{position:absolute;bottom:28px;left:10px;z-index:1001;background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;font-size:11px;box-shadow:0 2px 8px var(--shadow);}
 #legend h4{font-size:9px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--text3);margin-bottom:8px;}
 .li{display:flex;align-items:center;gap:8px;margin-bottom:5px;color:var(--text2);font-size:10px;}
@@ -458,6 +460,7 @@ header{background:var(--panel);border-bottom:1px solid var(--border);padding:0 1
       <button class="map-btn on" id="btn-sites" onclick="toggleSitesLayer()">&#128225; Sites</button>
       <button class="map-btn" id="btn-fdr" onclick="toggleFDRLayer()">&#128293; Fire Danger</button>
       <button class="map-btn" id="btn-warnings" onclick="toggleWarningsLayer()">&#9928; BOM Warnings</button>
+      <button class="map-btn" id="btn-marine" onclick="toggleMarineLayer()">&#127754; Marine Warnings</button>
       <button class="map-btn" id="btn-alerts" onclick="toggleAlertsLayer()">&#128680; NSW Alerts</button>
       <button class="map-btn" id="btn-incidents" onclick="toggleIncidentsLayer()">&#9888; Incidents</button>
       <button class="map-btn" id="btn-radar" onclick="toggleRadarLayer()">&#127783; Radar</button>
@@ -535,6 +538,12 @@ header{background:var(--panel);border-bottom:1px solid var(--border);padding:0 1
       <div class="li"><div class="ld sq" style="background:#b71c1c"></div>Extreme</div>
       <div class="li"><div class="ld sq" style="background:#4a148c"></div>Catastrophic</div>
       <hr style="border-color:var(--border);margin:7px 0">
+      <h4>Marine Warnings</h4>
+      <div class="li"><div class="ld sq" style="background:#F0A500;opacity:0.7"></div>Strong Wind</div>
+      <div class="li"><div class="ld sq" style="background:#E06000;opacity:0.7"></div>Gale</div>
+      <div class="li"><div class="ld sq" style="background:#CC0000;opacity:0.7"></div>Storm Force</div>
+      <div class="li"><div class="ld sq" style="background:#800080;opacity:0.7"></div>Hurricane Force</div>
+      <hr style="border-color:var(--border);margin:7px 0">
       <h4>NSW Alert Zones</h4>
       <div class="li"><div class="ld sq" style="background:#ff2222;opacity:0.5"></div>Emergency Warning</div>
       <div class="li"><div class="ld sq" style="background:#ff8800;opacity:0.5"></div>Watch and Act</div>
@@ -602,6 +611,20 @@ header{background:var(--panel);border-bottom:1px solid var(--border);padding:0 1
             <button class="wp-tab" onclick="showWarnType('heatwave')" id="wt-heatwave">&#127773; Heat</button>
           </div>
           <div id="bom-warnings-content"><div class="wp-loading">Loading...</div></div>
+        </div>
+      </div>
+      <hr style="border-color:var(--border);margin:8px 0 14px">
+      <div class="wp-section" id="sec-marine">
+        <div class="wp-section-title" onclick="toggleSection('marine')">
+          <span>&#127754; Marine Warnings</span>
+          <div style="display:flex;align-items:center;gap:6px">
+            <button class="wp-toggle" id="marine-map-toggle" onclick="event.stopPropagation();toggleMarineLayer()">Map</button>
+            <span class="sec-chevron">&#9660;</span>
+          </div>
+        </div>
+        <div class="wp-section-body">
+          <div id="marine-fetch-status" class="fetch-status fetch-loading">&#8635; checking BOM...</div>
+          <div id="marine-content"><div class="wp-loading">Loading...</div></div>
         </div>
       </div>
       <hr style="border-color:var(--border);margin:8px 0 14px">
@@ -988,6 +1011,7 @@ function restoreSections(){
 var STATES_GEO = (typeof STATES_GEO !== "undefined" && STATES_GEO) ? STATES_GEO : null;
 var FDR_GEO = (typeof FDR_GEO !== "undefined" && FDR_GEO) ? FDR_GEO : null;
 var FDR_AAC_INDEX = {};
+var MARINE_ZONES_GEOJSON = (typeof MARINE_ZONES_GEOJSON !== "undefined" && MARINE_ZONES_GEOJSON) ? MARINE_ZONES_GEOJSON : null;
 
 var isDark = (localStorage.getItem("au-wx-theme")||"dark")==="dark";
 if(!isDark) document.documentElement.setAttribute("data-theme","light");
@@ -1154,13 +1178,14 @@ var LIGHT_TILE = "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png
 var ATTR = "&copy; <a href='https://carto.com/'>CARTO</a> &copy; <a href='https://www.openstreetmap.org/'>OSM</a>";
 
 // ── GLOBAL STATE ──
-var map, tileLayer, stateLayer, labelGroup, fdrLayer, warningsLayer, incidentsLayer, alertsLayer;
+var map, tileLayer, stateLayer, labelGroup, fdrLayer, warningsLayer, incidentsLayer, alertsLayer, marineLayer;
 var fdrFeatures=[], fdrPeriodTimes={}, fdrRatings={};
 var warningsData=[];
 var alertsData=[];   // NSW warning zone polygons from IncidentAlerts.xml
 var allIncidents={nsw:[],vic:[],qld:[],sa:[],wa:[],tas:[]};
 var feedStatus={nsw:"pending",vic:"pending",qld:"pending",sa:"pending",wa:"pending",tas:"pending"};
-var fdrVisible=false, warningsVisible=false, incidentsVisible=false;
+var fdrVisible=false, warningsVisible=false, incidentsVisible=false, marineVisible=false;
+var marineWarningsData = {};
 var curFDRPeriod=1, curFDRState="all", curIncState="all";
 // Marker registries — keyed by "lat,lng" — for auto-popup on panel row click
 var warningMarkerRegistry={};
@@ -1209,6 +1234,7 @@ function initMap(){
   warningsLayer=L.layerGroup();
   incidentsLayer=L.layerGroup();
   alertsLayer=L.layerGroup();
+  marineLayer=L.layerGroup();
   sitesLayer = L.layerGroup().addTo(map);
   renderSites();
   document.getElementById("theme-toggle").textContent=isDark?"\u2600":"\u263D";
@@ -1395,7 +1421,7 @@ function startFetching(){
 function refreshAll(){
   var btn=document.getElementById("refresh-btn");
   btn.classList.add("spinning");
-  fdrFeatures=[];fdrPeriodTimes={};fdrRatings={};warningsData=[];bomWarnings=[];alertsData=[];
+  fdrFeatures=[];fdrPeriodTimes={};fdrRatings={};warningsData=[];bomWarnings=[];alertsData=[];marineWarningsData={};
   allIncidents={nsw:[],vic:[],qld:[],sa:[],wa:[],tas:[]};
   feedStatus={nsw:"pending",vic:"pending",qld:"pending",sa:"pending",wa:"pending",tas:"pending"};
   document.getElementById("h-warnings").textContent="-";
@@ -1403,11 +1429,13 @@ function refreshAll(){
   statusEl("fdr-fetch-status","fetch-loading","&#8635; fetching BOM ratings...");
   statusEl("warn-fetch-status","fetch-loading","&#8635; fetching...");
   statusEl("alerts-fetch-status","fetch-loading","&#8635; fetching RFS...");
+  statusEl("marine-fetch-status","fetch-loading","&#8635; checking BOM...");
   document.getElementById("fdr-content").innerHTML="<div class='wp-loading'>Loading...</div>";
   document.getElementById("bom-warnings-content").innerHTML="<div class='wp-loading'>Loading...</div>";
+  document.getElementById("marine-content").innerHTML="<div class='wp-loading'>Loading...</div>";
   document.getElementById("inc-content").innerHTML="<div class='wp-loading'>Fetching feeds...</div>";
   ["nsw","vic","qld","sa","wa","tas"].forEach(function(k){setFeedStatus(k,"loading","fetching...");});
-  fdrLayer.clearLayers();warningsLayer.clearLayers();incidentsLayer.clearLayers();alertsLayer.clearLayers();
+  fdrLayer.clearLayers();warningsLayer.clearLayers();incidentsLayer.clearLayers();alertsLayer.clearLayers();marineLayer.clearLayers();
   setTimeout(function(){btn.classList.remove("spinning");},8000);
   startFetching();
   showToast("Refreshing all live data...");
@@ -2287,6 +2315,18 @@ function fetchBOMWarnings() {
       } else {
         statusEl("alerts-fetch-status","fetch-ok","&#10003; "+nz+" warning zone"+(nz>1?"s":"")+" \u00b7 RFS");
       }
+
+      // ── Load marine warnings from live_data.json ──────────────────────────
+      marineWarningsData = data.marine_warnings || {};
+      renderMarinePanel();
+      if(marineVisible) renderMarineLayer();
+      var nStates = Object.keys(marineWarningsData).length;
+      if(nStates === 0){
+        statusEl("marine-fetch-status","fetch-ok","&#10003; No active marine warnings");
+      } else {
+        var totalHazards = Object.values(marineWarningsData).reduce(function(s,v){return s+(v.hazards||[]).length;},0);
+        statusEl("marine-fetch-status","fetch-ok","&#10003; "+totalHazards+" hazard"+(totalHazards>1?"s":"")+" \u00b7 "+nStates+" state"+(nStates>1?"s":""));
+      }
       // Run risk assessment after all data is loaded
       computeRisks();
     })
@@ -2305,6 +2345,7 @@ function fetchBOMWarnings() {
         setFeedStatus(k, "err", "live_data.json unavailable");
       });
       statusEl("alerts-fetch-status","fetch-err","&#9888; live_data.json unavailable");
+      statusEl("marine-fetch-status","fetch-err","&#9888; live_data.json unavailable");
     });
 }
 
@@ -2523,6 +2564,103 @@ function toggleWarningsLayer(){
   var btn=document.getElementById("btn-warnings"),tog=document.getElementById("warn-map-toggle");
   if(warningsVisible){renderWarningsMap();warningsLayer.addTo(map);btn.classList.add("fdr-on");if(tog)tog.classList.add("on");}
   else{map.removeLayer(warningsLayer);btn.classList.remove("fdr-on");if(tog)tog.classList.remove("on");}
+}
+
+// ── MARINE WARNINGS LAYER ──
+function toggleMarineLayer(){
+  marineVisible=!marineVisible;
+  var btn=document.getElementById("btn-marine"),tog=document.getElementById("marine-map-toggle");
+  if(marineVisible){
+    renderMarineLayer();
+    marineLayer.addTo(map);
+    btn.classList.add("marine-on");
+    if(tog) tog.classList.add("on");
+  } else {
+    map.removeLayer(marineLayer);
+    btn.classList.remove("marine-on");
+    if(tog) tog.classList.remove("on");
+  }
+}
+
+function marineColor(severity){
+  if(severity==="HUR") return "#800080";
+  if(severity==="STO") return "#CC0000";
+  if(severity==="GAL") return "#E06000";
+  return "#F0A500"; // STR and default
+}
+
+function renderMarineLayer(){
+  marineLayer.clearLayers();
+  if(!MARINE_ZONES_GEOJSON) return;
+  if(!marineWarningsData || Object.keys(marineWarningsData).length === 0) return;
+
+  // Build a map of AAC -> highest severity hazard for colour
+  var aacSeverity = {};
+  var aacLevel = {};
+  var aacSummary = {};
+  var SEVERITY_RANK = {HUR:0,STO:1,GAL:2,STR:3};
+
+  Object.values(marineWarningsData).forEach(function(stateWarning){
+    (stateWarning.hazards || []).forEach(function(hazard){
+      (hazard.aac_codes || []).forEach(function(aac){
+        var existing = aacSeverity[aac];
+        var newRank = SEVERITY_RANK[hazard.severity] !== undefined ? SEVERITY_RANK[hazard.severity] : 99;
+        var existingRank = existing !== undefined ? (SEVERITY_RANK[existing] !== undefined ? SEVERITY_RANK[existing] : 99) : 99;
+        if(newRank < existingRank){
+          aacSeverity[aac] = hazard.severity;
+          aacLevel[aac] = hazard.level || hazard.severity;
+          aacSummary[aac] = hazard.summary || '';
+        }
+      });
+    });
+  });
+
+  MARINE_ZONES_GEOJSON.features.forEach(function(feat){
+    var aac = feat.properties && feat.properties.AAC;
+    if(!aac || !aacSeverity[aac]) return;
+    var color = marineColor(aacSeverity[aac]);
+    var distName = feat.properties.DIST_NAME || aac;
+    var level = aacLevel[aac] || aacSeverity[aac];
+    var summary = aacSummary[aac] ? '<div class="pu-row"><span class="pu-key">Areas</span><span class="pu-val">'+aacSummary[aac]+'</span></div>' : '';
+    var popHtml = '<div>' +
+      '<div class="pu-title" style="color:'+color+'">&#127754; '+distName+'</div>' +
+      '<span class="pu-badge" style="background:'+color+';color:#fff">'+level+'</span>' +
+      '<div style="border-top:1px solid var(--border);margin:8px 0"></div>' +
+      '<div class="pu-row"><span class="pu-key">Zone</span><span class="pu-val">'+aac+'</span></div>' +
+      summary +
+      '</div>';
+    L.geoJSON(feat, {
+      style: {
+        color: color,
+        weight: 2,
+        opacity: 0.8,
+        fillColor: color,
+        fillOpacity: 0.25
+      }
+    }).bindPopup(popHtml, {className:'ba-popup', maxWidth:320}).addTo(marineLayer);
+  });
+}
+
+function renderMarinePanel(){
+  var el = document.getElementById("marine-content");
+  if(!el) return;
+  if(!marineWarningsData || Object.keys(marineWarningsData).length === 0){
+    el.innerHTML = "<div class='wp-none'>No active marine warnings</div>";
+    return;
+  }
+  var html = '';
+  Object.keys(marineWarningsData).sort().forEach(function(state){
+    var sw = marineWarningsData[state];
+    html += '<div class="warn-state-hdr">'+state+'</div>';
+    (sw.hazards || []).forEach(function(h){
+      var color = marineColor(h.severity);
+      html += '<div class="warn-row">' +
+        '<div class="warn-title" style="color:'+color+'">&#127754; '+(h.level||h.severity)+'</div>' +
+        (h.summary ? '<div style="font-size:10px;color:var(--text3);margin-top:2px">'+h.summary+'</div>' : '') +
+        '</div>';
+    });
+  });
+  el.innerHTML = html;
 }
 
 // ── NSW ALERT ZONES (IncidentAlerts.xml — CAP-AU format) ──
