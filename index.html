@@ -2641,10 +2641,8 @@ function renderMarineLayer(){
   });
 }
 
-function flyToMarineWarning(aacCodesJson) {
+function flyToMarineWarning(aacCodes) {
   if (!MARINE_ZONES_GEOJSON) return;
-  var aacCodes;
-  try { aacCodes = JSON.parse(aacCodesJson); } catch(e) { return; }
   if (!aacCodes || !aacCodes.length) return;
   // Enable marine layer if not already on
   if (!marineVisible) toggleMarineLayer();
@@ -2673,16 +2671,31 @@ function renderMarinePanel(){
   Object.keys(marineWarningsData).sort().forEach(function(state){
     var sw = marineWarningsData[state];
     html += '<div class="warn-state-hdr">'+state+'</div>';
-    (sw.hazards || []).forEach(function(h){
+    (sw.hazards || []).forEach(function(h, i){
       var color = marineColor(h.severity);
-      var aacJson = JSON.stringify(h.aac_codes || []).replace(/"/g,'&quot;');
-      html += '<div class="warn-row" style="cursor:pointer" onclick="flyToMarineWarning(&quot;' + aacJson + '&quot;)">' +
+      var rowId = 'marine-row-' + state + '-' + i;
+      html += '<div class="warn-row" style="cursor:pointer" id="'+rowId+'">' +
         '<div class="warn-title" style="color:'+color+'">&#127754; '+(h.level||h.severity)+'</div>' +
         (h.summary ? '<div style="font-size:10px;color:var(--text3);margin-top:2px">'+h.summary+'</div>' : '') +
         '</div>';
     });
   });
   el.innerHTML = html;
+
+  // Wire up click handlers after DOM insertion to avoid inline JSON escaping issues
+  var hazardList = [];
+  Object.keys(marineWarningsData).sort().forEach(function(state){
+    var sw = marineWarningsData[state];
+    (sw.hazards || []).forEach(function(h, i){
+      hazardList.push({ state: state, index: i, aacCodes: h.aac_codes || [] });
+    });
+  });
+  hazardList.forEach(function(entry){
+    var row = document.getElementById('marine-row-' + entry.state + '-' + entry.index);
+    if(row) row.addEventListener('click', (function(aacCodes){
+      return function(){ flyToMarineWarning(aacCodes); };
+    })(entry.aacCodes));
+  });
 }
 
 // ── NSW ALERT ZONES (IncidentAlerts.xml — CAP-AU format) ──
