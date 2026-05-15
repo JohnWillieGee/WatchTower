@@ -1651,6 +1651,8 @@ setInterval(function(){
     loadBomRadarMeta();
   }
 }, 10 * 60 * 1000);
+
+function startFetching(){
   fetchFDR();
   fetchBOMWarnings();  // also loads all state incidents + NSW alert zones from live_data.json
   Object.keys(INC_FEEDS).forEach(fetchIncidents);  // skips all (all are live_data type)
