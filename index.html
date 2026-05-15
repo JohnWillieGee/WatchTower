@@ -967,7 +967,7 @@ function runDiagnostics(){
 }
 
 // ── SECTION COLLAPSE ──
-var SEC_IDS = ['fdr','warnings','incidents','alerts','sources'];
+var SEC_IDS = ['fdr','warnings','marine','incidents','alerts','sources'];
 
 function toggleSection(id){
   var el = document.getElementById('sec-'+id);
@@ -2641,6 +2641,27 @@ function renderMarineLayer(){
   });
 }
 
+function flyToMarineWarning(aacCodesJson) {
+  if (!MARINE_ZONES_GEOJSON) return;
+  var aacCodes;
+  try { aacCodes = JSON.parse(aacCodesJson); } catch(e) { return; }
+  if (!aacCodes || !aacCodes.length) return;
+  // Enable marine layer if not already on
+  if (!marineVisible) toggleMarineLayer();
+  // Collect bounds from all matching zone polygons
+  var bounds = null;
+  MARINE_ZONES_GEOJSON.features.forEach(function(feat) {
+    if (aacCodes.indexOf(feat.properties.AAC) === -1) return;
+    try {
+      var lb = L.geoJSON(feat).getBounds();
+      bounds = bounds ? bounds.extend(lb) : lb;
+    } catch(e) {}
+  });
+  if (bounds && bounds.isValid()) {
+    map.flyToBounds(bounds, { padding: [60, 60], duration: 0.8, maxZoom: 9 });
+  }
+}
+
 function renderMarinePanel(){
   var el = document.getElementById("marine-content");
   if(!el) return;
@@ -2654,7 +2675,8 @@ function renderMarinePanel(){
     html += '<div class="warn-state-hdr">'+state+'</div>';
     (sw.hazards || []).forEach(function(h){
       var color = marineColor(h.severity);
-      html += '<div class="warn-row">' +
+      var aacJson = JSON.stringify(h.aac_codes || []).replace(/"/g,'&quot;');
+      html += '<div class="warn-row" style="cursor:pointer" onclick="flyToMarineWarning(&quot;' + aacJson + '&quot;)">' +
         '<div class="warn-title" style="color:'+color+'">&#127754; '+(h.level||h.severity)+'</div>' +
         (h.summary ? '<div style="font-size:10px;color:var(--text3);margin-top:2px">'+h.summary+'</div>' : '') +
         '</div>';
@@ -3950,7 +3972,7 @@ function showNextRiskAlert() {
     siteCountHtml + siteListHtml +
     '<div class="risk-alert-actions" style="margin-top:10px">' +
       '<button class="risk-ack-btn" onclick="acknowledgeRiskAlert(this)">Acknowledge</button>' +
-      '<button class="risk-fly-btn" onclick="flyToWarning()">Go to warning</button>' +
+      '<button class="risk-fly-btn" onclick="flyToAlertWarning()">Go to warning</button>' +
     '</div>' +
   '</div>';
 
@@ -3964,7 +3986,7 @@ function showNextRiskAlert() {
   document.body.appendChild(popup);
 }
 
-function flyToWarning() {
+function flyToAlertWarning() {
   var popup = document.getElementById('risk-alert-popup');
   if (!popup || !popup._sites || popup._sites.length === 0) return;
   var sites = popup._sites;
