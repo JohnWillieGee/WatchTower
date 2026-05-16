@@ -1475,24 +1475,28 @@ function loadBomRadarMeta(){
     })
     .then(function(meta){
       bomRadarMeta = meta;
-      // meta.products is an object keyed by product ID — convert to ordered array
-      // National mosaic (IDR00004) first, then individual radars alphabetically
       var prodObj = meta.products || {};
-      var ids = Object.keys(prodObj);
-      // Put national mosaic first
-      ids.sort(function(a,b){
-        if(a === 'IDR00004') return -1;
-        if(b === 'IDR00004') return 1;
-        return a.localeCompare(b);
-      });
-      bomRadarProducts = ids.map(function(id){
-        var p = prodObj[id];
-        return { id: id, name: p.name, bounds: p.bounds, frames: p.frames || [] };
-      });
-      if(!bomRadarProducts.length){
-        document.getElementById('bom-radar-age-label').textContent = 'No products';
+
+      // Composite product only — individual products are not loaded in the browser.
+      // Use RainViewer (btn-radar) as fallback if BOM composite is unavailable.
+      if(!prodObj['composite']){
+        document.getElementById('bom-radar-age-label').textContent = 'Composite not ready';
+        console.warn('BOM Radar: composite product not found in radar_meta.json');
         return;
       }
+
+      bomRadarProducts = [{
+        id: 'composite',
+        name: prodObj['composite'].name,
+        bounds: prodObj['composite'].bounds,
+        frames: prodObj['composite'].frames || []
+      }];
+
+      if(!bomRadarProducts[0].frames.length){
+        document.getElementById('bom-radar-age-label').textContent = 'No frames';
+        return;
+      }
+
       bomRadarLoaded = true;
       bomRadarProductIdx = 0;
       buildBomRadarProduct(bomRadarProductIdx);
