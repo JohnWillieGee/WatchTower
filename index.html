@@ -2829,7 +2829,7 @@ function toggleMarineLayer(){
 function marineColor(severity){
   if(severity==="HUR") return "#800080";
   if(severity==="STO") return "#CC0000";
-  if(severity==="GAL") return "#E06000";
+  if(severity==="GAL"||severity==="GALE") return "#E06000";
   return "#F0A500"; // STR and default
 }
 
@@ -2842,7 +2842,7 @@ function renderMarineLayer(){
   var aacSeverity = {};
   var aacLevel = {};
   var aacSummary = {};
-  var SEVERITY_RANK = {HUR:0,STO:1,GAL:2,STR:3};
+  var SEVERITY_RANK = {HUR:0,STO:1,GAL:2,GALE:2,STR:3};
 
   Object.values(marineWarningsData).forEach(function(stateWarning){
     (stateWarning.hazards || []).forEach(function(hazard){
