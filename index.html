@@ -2747,11 +2747,11 @@ function renderWarningsMap() {
     // Draw district polygon(s) from BOM PW GeoJSON — match all named districts in the warning
     var drawnPolygon = false;
     if (BOM_PW_DISTRICTS) {
-      var searchText = (w.title + ' ' + (w.text||'')).toLowerCase();
+      var searchText = (w.title + ' ' + (w.text||'')).toLowerCase().replace(/\s+&\s+/g,' and ');
       BOM_PW_DISTRICTS.features.forEach(function(feat) {
-        var dname  = (feat.properties.name || '').toLowerCase();
-        var dstate = feat.properties.state || '';
-        if (dstate === w.state && dname.length > 3 && searchText.indexOf(dname) !== -1) {
+        var dname  = (feat.properties.name || '').toLowerCase().replace(/\s+&\s+/g,' and ');
+        var dstate = (feat.properties.state || '').toUpperCase();
+        if (dstate === (w.state||'').toUpperCase() && dname.length > 3 && searchText.indexOf(dname) !== -1) {
           L.geoJSON(feat, {
             style: {
               color: warnColor, weight: warnWeight, opacity: warnOpacity,
@@ -3967,8 +3967,10 @@ function computeRisks() {
             // District must be in same state as warning
             if (dstate !== wstate) return;
             // District name must appear in warning title or districts field
-            var searchText = ((w.districts || '') + ' ' + (w.title || '')).toLowerCase();
-            if (dname.length > 3 && searchText.indexOf(dname) !== -1) {
+            // Normalise & vs and so "North West Slopes & Plains" matches "North West Slopes and Plains"
+            var dnorm  = dname.replace(/\s+&\s+/g,' and ');
+            var searchText = ((w.districts || '') + ' ' + (w.title || '')).toLowerCase().replace(/\s+&\s+/g,' and ');
+            if (dnorm.length > 3 && searchText.indexOf(dnorm) !== -1) {
               // Check if site is inside this district polygon
               if (pointInGeoJSONPolygon(site.lat, site.lon, feat.geometry)) {
                 inDistrict = true;
