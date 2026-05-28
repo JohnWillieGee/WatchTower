@@ -3324,7 +3324,7 @@ function isActiveIncident(inc){
     var updMs = updD ? updD.getTime() : NaN;
     if(!isNaN(updMs)){
       var ageHours = (Date.now() - updMs) / 3600000;
-      if(ageHours < -1) return false;   // future-dated (allow 1hr clock skew)
+      if(ageHours < -12) return false;   // future-dated (allow 1hr clock skew)
       if(ageHours > 72) return false;   // stale
     }
   }
