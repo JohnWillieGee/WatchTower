@@ -4202,7 +4202,10 @@ function showNextRiskAlert() {
   var col = RISK_COLOR[item.level];
 
   var isPulse = (item.level >= RISK_LEVEL.DIRECT) || item.isFireStorm;
-  var typeIcon = item.isFireStorm ? '⛈ STORM WARNING — AM/MF SITE' : '🔥 FIRE THREAT';
+  var typeIcon = item.isFireStorm ? '⛈ STORM WARNING — AM/MF SITE'
+   : (item.reasons.some(function(r){ return (r.detail||'').toLowerCase().includes('flood'); }) ? '🌊 FLOOD THREAT'
+   : (item.reasons.some(function(r){ return r.type==='fdr'; }) ? '🔥 FIRE THREAT'
+   : '⚠\uFE0F HAZARD THREAT'));
 
   var reasonHtml = item.reasons.slice(0,2).map(function(r) {
     return '<div style="font-size:10px;color:var(--text2);padding:2px 0;border-bottom:1px solid var(--border)">'+
