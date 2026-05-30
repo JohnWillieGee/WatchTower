@@ -43,11 +43,11 @@ var TOUR_STEPS = [
   {
     id: 'sites-layer',
     title: 'Your Broadcast Sites',
-    body: 'Each dot on the map is a BAI broadcast site. Colours indicate modulation type:<br><br><span style="color:#f0a500">\u25cf</span> AM &nbsp; <span style="color:#00d4aa">\u25cf</span> FM &nbsp; <span style="color:#9775fa">\u25cf</span> DAB+ &nbsp; <span style="color:#4dabf7">\u25cf</span> DTV<br><br>Click any site dot to see full service details.<br><br><strong>Try it:</strong> click the <strong>\u2630</strong> hamburger icon at top-left to open the Site Filters panel.',
-    target: '#map-wrap',
-    position: 'center',
+    body: 'Each dot on the map is a BAI broadcast site. Colours indicate modulation type:<br><br><span style="color:#f0a500">\u25cf</span> AM &nbsp; <span style="color:#00d4aa">\u25cf</span> FM &nbsp; <span style="color:#9775fa">\u25cf</span> DAB+ &nbsp; <span style="color:#4dabf7">\u25cf</span> DTV<br><br>Click any site dot to see full service details.<br><br><strong>Try it:</strong> click the <strong>\u2630</strong> hamburger icon (spotlighted above) to open the Site Filters panel.',
+    target: 'header > div:first-child',
+    position: 'bottom',
     panel: null,
-    action: { type: 'click', selector: 'button[onclick="toggleFilterSidebar()"]', label: 'Click the \u2630 hamburger to open Site Filters' },
+    action: { type: 'click', selector: '#btn-hamburger', label: 'Click the \u2630 hamburger to open Site Filters' },
     mapReset: true
   },
   {
@@ -75,11 +75,11 @@ var TOUR_STEPS = [
   {
     id: 'fdr-layer',
     title: 'Fire Danger Ratings',
-    body: 'The Fire Danger layer overlays BOM district FDR polygons across the map. Colours match BOM\'s own scale:<br><br><span style="color:#4caf50">\u25a0</span> Moderate &nbsp; <span style="color:#ff6b00">\u25a0</span> High &nbsp; <span style="color:#e53935">\u25a0</span> Extreme &nbsp; <span style="color:#7b1fa2">\u25a0</span> Catastrophic<br><br><strong>Try it:</strong> click the <strong>Fire Danger</strong> button in the toolbar above to toggle the layer on.',
-    target: '#map-wrap',
-    position: 'center',
+    body: 'The Fire Danger layer overlays BOM district FDR polygons across the map. Colours match BOM\'s own scale:<br><br><span style="color:#4caf50">\u25a0</span> Moderate &nbsp; <span style="color:#ff6b00">\u25a0</span> High &nbsp; <span style="color:#e53935">\u25a0</span> Extreme &nbsp; <span style="color:#7b1fa2">\u25a0</span> Catastrophic<br><br><strong>Try it:</strong> click the <strong>Fire Danger</strong> button (spotlighted above) to toggle the layer on.',
+    target: '#map-controls',
+    position: 'bottom',
     panel: null,
-    action: { type: 'click', selector: '#btn-fdr', label: 'Click \u201cFire Danger\u201d in the toolbar above the map' },
+    action: { type: 'click', selector: '#btn-fdr', label: 'Click \u201cFire Danger\u201d in the toolbar' },
     mapReset: false
   },
   {
