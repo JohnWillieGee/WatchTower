@@ -162,7 +162,6 @@ var HELP_ANCHORS = {
 var tourActive    = false;
 var tourStep      = 0;
 var helpActive    = false;
-var tourOverlayEl = null;
 var tourCardEl    = null;
 var helpBubbles   = [];
 
@@ -170,23 +169,15 @@ var helpBubbles   = [];
 (function injectTourCSS(){
   var style = document.createElement('style');
   style.textContent = [
-    // ── Overlay ──────────────────────────────────────────────────────────────
-    '#tour-overlay{',
-      'position:fixed;inset:0;z-index:9000;pointer-events:none;',
-      'transition:opacity .3s;',
+    // ── Overlay — four panels surround the spotlight, leaving target clickable ──
+    '.tour-shade{',
+      'position:fixed;z-index:9000;background:rgba(0,0,0,0.72);',
+      'transition:all .35s cubic-bezier(.4,0,.2,1);pointer-events:all;',
     '}',
-    '#tour-overlay.active{pointer-events:all;}',
-
-    // Spotlight cutout via box-shadow
-    '#tour-spotlight{',
-      'position:fixed;z-index:9001;border-radius:6px;',
-      'box-shadow:0 0 0 9999px rgba(0,0,0,0.72);',
-      'transition:top .35s cubic-bezier(.4,0,.2,1),',
-                 'left .35s cubic-bezier(.4,0,.2,1),',
-                 'width .35s cubic-bezier(.4,0,.2,1),',
-                 'height .35s cubic-bezier(.4,0,.2,1);',
-      'pointer-events:none;',
-    '}',
+    '#tour-shade-top   {top:0;left:0;right:0;}',
+    '#tour-shade-bottom{left:0;right:0;bottom:0;}',
+    '#tour-shade-left  {left:0;}',
+    '#tour-shade-right {right:0;}',
 
     // ── Tour card ─────────────────────────────────────────────────────────────
     '#tour-card{',
@@ -326,23 +317,46 @@ function tourMapReset(){
   }
 }
 
-// ── SPOTLIGHT POSITIONING ─────────────────────────────────────────────────────
+// ── SHADE POSITIONING ─────────────────────────────────────────────────────────
 function tourPositionSpotlight(selector){
-  var spot = document.getElementById('tour-spotlight');
-  if(!spot) return;
+  var top    = document.getElementById('tour-shade-top');
+  var bottom = document.getElementById('tour-shade-bottom');
+  var left   = document.getElementById('tour-shade-left');
+  var right  = document.getElementById('tour-shade-right');
+  if(!top) return;
+
   if(!selector){
-    // centred modal — hide spotlight, card is centred
-    spot.style.opacity = '0';
+    // centred modal — full dark overlay, no cutout
+    top.style.height    = '100vh';
+    bottom.style.height = '0px';
+    left.style.width    = '0px';  left.style.top = '0px'; left.style.height = '0px';
+    right.style.width   = '0px'; right.style.top = '0px'; right.style.height = '0px';
     return;
   }
+
   var rect = tourGetRect(selector);
-  if(!rect){ spot.style.opacity = '0'; return; }
+  if(!rect){
+    top.style.height = '100vh';
+    bottom.style.height = '0px';
+    left.style.width = '0px'; right.style.width = '0px';
+    return;
+  }
+
   var pad = 8;
-  spot.style.opacity = '1';
-  spot.style.top    = (rect.top    - pad) + 'px';
-  spot.style.left   = (rect.left   - pad) + 'px';
-  spot.style.width  = (rect.width  + pad*2) + 'px';
-  spot.style.height = (rect.height + pad*2) + 'px';
+  var sTop    = Math.max(0, rect.top    - pad);
+  var sLeft   = Math.max(0, rect.left   - pad);
+  var sRight  = Math.max(0, window.innerWidth  - rect.right  - pad);
+  var sBottom = Math.max(0, window.innerHeight - rect.bottom - pad);
+  var sHeight = rect.height + pad * 2;
+
+  top.style.height    = sTop + 'px';
+  bottom.style.height = sBottom + 'px';
+  left.style.top      = sTop + 'px';
+  left.style.height   = sHeight + 'px';
+  left.style.width    = sLeft + 'px';
+  right.style.top     = sTop + 'px';
+  right.style.height  = sHeight + 'px';
+  right.style.width   = sRight + 'px';
 }
 
 // ── CARD POSITIONING ──────────────────────────────────────────────────────────
@@ -412,7 +426,7 @@ function tourBuildCard(step, idx, total){
 
   var nextLabel = isLast ? 'Finish \u2713' : 'Next \u2192';
   var nextBtn   = isAction
-    ? '' // no Next button when waiting for an action
+    ? '<button class="tc-btn primary" id="tour-skip-step-btn">Skip step \u21e5</button>'
     : '<button class="tc-btn primary" id="tour-next-btn">' + nextLabel + '</button>';
 
   var backBtn = !isFirst
@@ -420,7 +434,7 @@ function tourBuildCard(step, idx, total){
     : '';
 
   return [
-    '<div class="tc-step">Step ' + (idx+1) + ' of ' + total + '</div>',
+    '<div class="tc-step">Step ' + (idx+1) + ' of ' + total + ' &nbsp;<span id="tour-exit-lnk" style="color:var(--text3);cursor:pointer;text-transform:none;letter-spacing:0;font-weight:400">\u2715 exit</span></div>',
     '<div class="tc-title">' + step.title + '</div>',
     '<div class="tc-body">' + step.body + '</div>',
     actionHtml,
@@ -429,7 +443,6 @@ function tourBuildCard(step, idx, total){
       '<div style="display:flex;gap:6px;align-items:center;">',
         backBtn,
         nextBtn,
-        '<button class="tc-btn skip" id="tour-skip-btn">Skip</button>',
       '</div>',
     '</div>'
   ].join('');
@@ -482,12 +495,14 @@ function tourRenderStep(idx){
       tourPositionCard(step.target, step.position);
 
       // Wire buttons
-      var nextBtn = document.getElementById('tour-next-btn');
-      var backBtn = document.getElementById('tour-back-btn');
-      var skipBtn = document.getElementById('tour-skip-btn');
-      if(nextBtn) nextBtn.addEventListener('click', function(){ tourAdvance(1); });
-      if(backBtn) backBtn.addEventListener('click', function(){ tourAdvance(-1); });
-      if(skipBtn) skipBtn.addEventListener('click', endTutorial);
+      var nextBtn     = document.getElementById('tour-next-btn');
+      var skipStepBtn = document.getElementById('tour-skip-step-btn');
+      var backBtn     = document.getElementById('tour-back-btn');
+      var exitLnk     = document.getElementById('tour-exit-lnk');
+      if(nextBtn)     nextBtn.addEventListener('click', function(){ tourAdvance(1); });
+      if(skipStepBtn) skipStepBtn.addEventListener('click', function(){ tourClearActionListener(); tourAdvance(1); });
+      if(backBtn)     backBtn.addEventListener('click', function(){ tourAdvance(-1); });
+      if(exitLnk)     exitLnk.addEventListener('click', endTutorial);
 
       // Wire action listener
       tourWatchAction(step);
@@ -520,17 +535,15 @@ function startTutorial(){
   var panel = document.getElementById('settings-panel');
   if(panel && panel.classList.contains('open')) toggleSettingsPanel();
 
-  // Build overlay + spotlight + card
-  var overlay = document.createElement('div');
-  overlay.id = 'tour-overlay';
-  overlay.className = 'active';
-  document.body.appendChild(overlay);
-  tourOverlayEl = overlay;
+  // Build four shade panels
+  ['top','bottom','left','right'].forEach(function(side){
+    var el = document.createElement('div');
+    el.id = 'tour-shade-' + side;
+    el.className = 'tour-shade';
+    document.body.appendChild(el);
+  });
 
-  var spot = document.createElement('div');
-  spot.id = 'tour-spotlight';
-  document.body.appendChild(spot);
-
+  // Build card
   var card = document.createElement('div');
   card.id = 'tour-card';
   document.body.appendChild(card);
@@ -548,9 +561,10 @@ function endTutorial(completed){
   tourActive = false;
   tourClearActionListener();
 
-  if(tourOverlayEl){ tourOverlayEl.remove(); tourOverlayEl = null; }
-  var spot = document.getElementById('tour-spotlight');
-  if(spot) spot.remove();
+  ['top','bottom','left','right'].forEach(function(side){
+    var el = document.getElementById('tour-shade-' + side);
+    if(el) el.remove();
+  });
   if(tourCardEl){ tourCardEl.remove(); tourCardEl = null; }
 
   // Restore tutorial button
