@@ -412,10 +412,26 @@ function tourEnsurePanel(step, callback){
     delay = Math.max(delay, 320);
   }
 
-  // Weather panel — open if this step needs right panel content
+  // Weather panel — open if this step needs right panel content, then scroll to section
   if(panelKey === 'right' && !weatherOpen){
     toggleWeatherPanel();
     delay = Math.max(delay, 320);
+  }
+  // Always scroll the target section into view within the wp-body scroll container
+  if(panelKey === 'right' && step.target){
+    var scrollDelay = weatherOpen ? 60 : 360;  // if panel was closed, wait for it to open first
+    setTimeout(function(){
+      var el = document.querySelector(step.target);
+      if(el){
+        var wpBody = document.querySelector('.wp-body');
+        if(wpBody){
+          wpBody.scrollTo({ top: el.offsetTop - 12, behavior: 'smooth' });
+        } else {
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }
+    }, scrollDelay);
+    delay = Math.max(delay, scrollDelay + 250);
   }
 
   // Settings panel
