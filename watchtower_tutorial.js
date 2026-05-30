@@ -23,7 +23,7 @@ var TOUR_STEPS = [
   {
     id: 'welcome',
     title: 'Welcome to WatchTower',
-    body: 'WatchTower gives BAI Network Operations a live picture of broadcast site risk across Australia \u2014 combining 341 site locations with real-time fire danger ratings, BOM weather warnings, and active emergency incidents.<br><br>This guided tour will walk you through everything. Use <strong>Next</strong> to advance or <strong>Skip</strong> to exit at any time.',
+    body: 'WatchTower gives BAI Network Operations a live picture of broadcast site risk across Australia \u2014 combining 341 site locations with real-time fire danger ratings, BOM weather warnings, and active emergency incidents.<br><br>This guided tour will walk you through everything. Use <strong>Next</strong> to advance or <strong>Skip step</strong> to skip any action step.',
     target: null,
     position: 'center',
     panel: null,
@@ -44,8 +44,8 @@ var TOUR_STEPS = [
     id: 'sites-layer',
     title: 'Your Broadcast Sites',
     body: 'Each dot on the map is a BAI broadcast site. Colours indicate modulation type:<br><br><span style="color:#f0a500">\u25cf</span> AM &nbsp; <span style="color:#00d4aa">\u25cf</span> FM &nbsp; <span style="color:#9775fa">\u25cf</span> DAB+ &nbsp; <span style="color:#4dabf7">\u25cf</span> DTV<br><br>Click any site dot to see full service details. Use the <strong>Site Filters</strong> panel (hamburger icon) to filter by state, broadcaster, or modulation.',
-    target: '#btn-sites',
-    position: 'bottom',
+    target: '#map-wrap',
+    position: 'center',
     panel: null,
     action: { type: 'next' },
     mapReset: true
@@ -53,17 +53,17 @@ var TOUR_STEPS = [
   {
     id: 'fdr-layer',
     title: 'Fire Danger Ratings',
-    body: 'The Fire Danger layer overlays BOM district FDR polygons on the map. Colours match BOM\'s own scale:<br><br><span style="color:#4caf50">\u25a0</span> Moderate &nbsp; <span style="color:#ff6b00">\u25a0</span> High &nbsp; <span style="color:#e53935">\u25a0</span> Extreme &nbsp; <span style="color:#7b1fa2">\u25a0</span> Catastrophic<br><br><strong>Try it:</strong> click the <strong>Fire Danger</strong> button in the toolbar to toggle the layer on.',
-    target: '#btn-fdr',
-    position: 'bottom',
+    body: 'The Fire Danger layer overlays BOM district FDR polygons across the map. Colours match BOM\'s own scale:<br><br><span style="color:#4caf50">\u25a0</span> Moderate &nbsp; <span style="color:#ff6b00">\u25a0</span> High &nbsp; <span style="color:#e53935">\u25a0</span> Extreme &nbsp; <span style="color:#7b1fa2">\u25a0</span> Catastrophic<br><br><strong>Try it:</strong> click the <strong>Fire Danger</strong> button in the toolbar above the map to see the districts appear.',
+    target: '#map-wrap',
+    position: 'center',
     panel: null,
-    action: { type: 'click', selector: '#btn-fdr', label: 'Toggle Fire Danger layer' },
+    action: { type: 'click', selector: '#btn-fdr', label: 'Click \u201cFire Danger\u201d in the toolbar above the map' },
     mapReset: false
   },
   {
     id: 'bom-warnings',
     title: 'BOM Warnings',
-    body: 'The <strong>Live Weather &amp; Hazards</strong> panel on the right shows active BOM warnings fetched directly from BOM\'s FTP feed \u2014 severe weather, fire weather, cyclones, floods and more.<br><br>Warnings are also drawn as overlays on the map when the <strong>BOM Warnings</strong> layer is active. Click any warning to see district details and a direct link to the BOM warning page.',
+    body: 'The <strong>Live Weather &amp; Hazards</strong> panel on the right shows active BOM warnings fetched directly from BOM\'s FTP feed \u2014 severe weather, fire weather, cyclones, floods and more.<br><br>Warnings are also drawn as district overlays on the map when the <strong>BOM Warnings</strong> layer is active. Click any warning in the panel to fly to its location.',
     target: '#sec-warnings',
     position: 'left',
     panel: 'right',
@@ -73,7 +73,7 @@ var TOUR_STEPS = [
   {
     id: 'incidents',
     title: 'Active Incidents',
-    body: 'The <strong>Incidents</strong> section lists active fire, flood, and storm incidents sourced from state emergency agencies (RFS, EMV, QFD, CFS, DFES, TasALERT, PFES, ESA).<br><br>Use the state tabs to filter by jurisdiction. The <strong>Minimum alert level</strong> setting in Settings controls what appears \u2014 Advice, Watch &amp; Act, Emergency Warning, or All.<br><br>Click any incident in the list to fly the map to its location.',
+    body: 'The <strong>Incidents</strong> section lists active fire, flood, and storm incidents sourced from all state emergency agencies \u2014 RFS, EMV, QFD, CFS, DFES, TasALERT, PFES and ESA.<br><br>Use the state tabs to filter by jurisdiction. Click any incident to fly the map to its location.',
     target: '#sec-incidents',
     position: 'left',
     panel: 'right',
@@ -83,7 +83,7 @@ var TOUR_STEPS = [
   {
     id: 'risk-engine',
     title: 'The Risk Engine',
-    body: 'WatchTower automatically scores every site against active hazards and assigns one of four risk tiers:<br><br><span style="color:#f0a500">\u25cf</span> <strong>Advisory</strong> \u2014 hazard in the region, monitor<br><span style="color:#ff8800">\u25cf</span> <strong>Warning</strong> \u2014 hazard within proximity threshold<br><span style="color:#ff4444">\u25cf</span> <strong>Direct Threat</strong> \u2014 hazard directly affecting site area<br><span style="color:#ff0000">\u25cf</span> <strong>Site Impacted</strong> \u2014 site inside active incident zone<br><br>The <strong>At Risk</strong> counter shows how many sites are flagged. Click <strong>Risk</strong> in the header to see the full breakdown.',
+    body: 'WatchTower automatically scores every site against active hazards and assigns one of four risk tiers:<br><br><span style="color:#f0a500">\u25cf</span> <strong>Advisory</strong> \u2014 hazard in the region, monitor<br><span style="color:#ff8800">\u25cf</span> <strong>Warning</strong> \u2014 hazard within proximity threshold<br><span style="color:#ff4444">\u25cf</span> <strong>Direct Threat</strong> \u2014 hazard directly affecting site area<br><span style="color:#ff0000">\u25cf</span> <strong>Site Impacted</strong> \u2014 site inside active incident zone<br><br>Click <strong>Risk</strong> in the header to see the full breakdown panel.',
     target: '#btn-risk-panel',
     position: 'bottom',
     panel: null,
@@ -93,7 +93,7 @@ var TOUR_STEPS = [
   {
     id: 'map-layers',
     title: 'Map Layers &amp; Controls',
-    body: 'The toolbar along the top of the map gives you control over every overlay layer:<br><br><strong>Borders / Labels</strong> \u2014 state outlines and names<br><strong>Sites</strong> \u2014 broadcast site dots<br><strong>Fire Danger</strong> \u2014 BOM FDR polygons<br><strong>BOM Warnings</strong> \u2014 warning district overlays<br><strong>Marine Warnings</strong> \u2014 coastal and marine alerts<br><strong>NSW Alerts</strong> \u2014 RFS alert zones<br><strong>Incidents</strong> \u2014 incident markers<br><strong>Radar / BOM Radar</strong> \u2014 live rainfall radar<br><strong>Lightning / Wind / Ducting</strong> \u2014 specialist overlays',
+    body: 'The toolbar along the top of the map controls every overlay layer:<br><br><strong>Borders / Labels</strong> \u2014 state outlines and names<br><strong>Sites</strong> \u2014 broadcast site dots<br><strong>Fire Danger</strong> \u2014 BOM FDR polygons<br><strong>BOM Warnings</strong> \u2014 warning district overlays<br><strong>Marine Warnings</strong> \u2014 coastal and marine alerts<br><strong>NSW Alerts</strong> \u2014 RFS alert zones<br><strong>Incidents</strong> \u2014 incident markers<br><strong>Radar / BOM Radar</strong> \u2014 live rainfall radar<br><strong>Lightning / Wind / Ducting</strong> \u2014 specialist overlays',
     target: '#map-controls',
     position: 'bottom',
     panel: null,
@@ -101,19 +101,59 @@ var TOUR_STEPS = [
     mapReset: false
   },
   {
-    id: 'settings',
-    title: 'Settings &amp; Presets',
-    body: 'The Settings panel lets you tune WatchTower for your shift.<br><br><strong>Presets</strong> \u2014 Winter and Summer presets adjust FDR thresholds, incident proximity distances, and alert floors for the season<br><strong>Theme</strong> \u2014 Dark, Natural, or Light to suit your environment<br><strong>Risk thresholds</strong> \u2014 adjust proximity distances for the risk engine<br><strong>Storm warnings</strong> \u2014 toggle AM/FM storm proximity alerting<br><br><strong>Try it:</strong> click the <strong>\u2699 Settings</strong> cog to open the panel.',
+    id: 'settings-open',
+    title: 'Settings Panel',
+    body: 'The Settings panel lets you tune WatchTower for your current shift and operating conditions.<br><br><strong>Try it:</strong> click the <strong>\u2699</strong> cog button to open the Settings panel.',
     target: '#settings-toggle',
     position: 'right',
     panel: null,
-    action: { type: 'click', selector: '#settings-toggle', label: 'Open Settings panel' },
+    action: { type: 'click', selector: '#settings-toggle', label: 'Click the \u2699 cog to open Settings' },
+    mapReset: false
+  },
+  {
+    id: 'settings-presets',
+    title: 'Operational Presets',
+    body: '<strong>Winter</strong> and <strong>Summer</strong> presets reconfigure WatchTower for the season in one click:<br><br>\u2744 <strong>Winter</strong> \u2014 broader proximity distances, Extreme FDR threshold, 48h incident window<br>\u2600 <strong>Summer</strong> \u2014 tighter distances, Very High FDR threshold, 24h window, higher alert floor<br><br>If you adjust any individual setting the preset label changes to <em>Custom</em>. <strong>Restore defaults</strong> resets to Winter.',
+    target: '.sp-preset-bar',
+    position: 'right',
+    panel: 'settings',
+    action: { type: 'next' },
+    mapReset: false
+  },
+  {
+    id: 'settings-display',
+    title: 'Display &amp; Theme',
+    body: 'The <strong>Display</strong> section controls how WatchTower looks:<br><br><strong>Theme</strong> \u2014 choose Dark for the NOC wall, Natural for a neutral daytime look, or Light for bright environments<br><strong>Site labels</strong> \u2014 toggle site name tags on the map<br><strong>Active states</strong> \u2014 limit which states are shown in the incidents panel and risk scoring',
+    target: '#sp-body-display',
+    position: 'right',
+    panel: 'settings',
+    action: { type: 'next' },
+    mapReset: false
+  },
+  {
+    id: 'settings-incidents',
+    title: 'Incident Filters',
+    body: 'The <strong>Incidents</strong> section controls what appears in the incidents panel:<br><br><strong>Minimum alert level</strong> \u2014 All, Advice, Watch &amp; Act, or Emergency Warning only<br><strong>Max incident age</strong> \u2014 filter out older incidents (24h / 48h)<br><br>These filters also affect the <strong>Incidents</strong> counter in the header and the per-state counts in the feed status list.',
+    target: '#sp-body-incidents',
+    position: 'right',
+    panel: 'settings',
+    action: { type: 'next' },
+    mapReset: false
+  },
+  {
+    id: 'settings-risk',
+    title: 'Risk Thresholds',
+    body: 'The <strong>Risk Thresholds</strong> section lets you tune how sensitive the risk engine is:<br><br><strong>FDR layer</strong> \u2014 toggle FDR as a risk factor on/off<br><strong>Minimum FDR level</strong> \u2014 set the lowest rating that triggers risk scoring<br><strong>Watch &amp; Act / EW distance</strong> \u2014 how close an incident must be to flag a site<br><strong>Advice distance</strong> \u2014 proximity cap for lower-level incidents<br><strong>Risk popup trigger</strong> \u2014 which tier triggers the alert popup',
+    target: '#sp-body-risk',
+    position: 'right',
+    panel: 'settings',
+    action: { type: 'next' },
     mapReset: false
   },
   {
     id: 'refresh',
     title: 'Refresh Cycle',
-    body: 'WatchTower automatically refreshes all live data every <strong>5 minutes</strong> \u2014 FDR ratings, BOM warnings, incidents, and radar frames all update together.<br><br>The <strong>Refresh</strong> button in the header lets you trigger an immediate refresh at any time. A countdown in the button shows time until the next auto-refresh.<br><br>This means the NOC wall display stays current without anyone needing to touch it.',
+    body: 'WatchTower automatically refreshes all live data every <strong>5 minutes</strong> \u2014 FDR ratings, BOM warnings, incidents, and radar frames all update in sync.<br><br>The <strong>Refresh</strong> button in the header triggers an immediate refresh at any time. It\'s safe to leave WatchTower running on the NOC wall \u2014 it will stay current without any interaction.',
     target: '#refresh-btn',
     position: 'bottom',
     panel: null,
@@ -123,7 +163,7 @@ var TOUR_STEPS = [
   {
     id: 'help-mode',
     title: 'Help Mode',
-    body: 'Once you\'ve finished this tour, you don\'t need to run it again just to look something up.<br><br>The <strong>?</strong> button next to the hamburger icon activates <strong>Help Mode</strong> \u2014 numbered hotspot bubbles appear on every key element. Click any bubble to read about that feature, without leaving the map or interrupting your workflow.<br><br>Click <strong>?</strong> again to dismiss all bubbles.',
+    body: 'You don\'t need to run the full tour again just to look something up.<br><br>The <strong>?</strong> button (next to the hamburger icon) activates <strong>Help Mode</strong> \u2014 numbered hotspot bubbles appear on every key element. Click any bubble to read about that feature without leaving the map.<br><br>Click <strong>?</strong> again to dismiss all bubbles.',
     target: '#btn-help',
     position: 'right',
     panel: null,
@@ -146,16 +186,20 @@ var TOUR_STEPS = [
 // Maps step id to a CSS selector — these are the anchor elements for bubbles.
 // Steps with target:null get skipped in help mode (welcome/easter-egg are tour-only).
 var HELP_ANCHORS = {
-  'header-stats':  '.header-right',
-  'sites-layer':   '#btn-sites',
-  'fdr-layer':     '#btn-fdr',
-  'bom-warnings':  '#sec-warnings',
-  'incidents':     '#sec-incidents',
-  'risk-engine':   '#btn-risk-panel',
-  'map-layers':    '#map-controls',
-  'settings':      '#settings-toggle',
-  'refresh':       '#refresh-btn',
-  'help-mode':     '#btn-help'
+  'header-stats':      '.header-right',
+  'sites-layer':       '#btn-sites',
+  'fdr-layer':         '#btn-fdr',
+  'bom-warnings':      '#sec-warnings',
+  'incidents':         '#sec-incidents',
+  'risk-engine':       '#btn-risk-panel',
+  'map-layers':        '#map-controls',
+  'settings-open':     '#settings-toggle',
+  'settings-presets':  '.sp-preset-bar',
+  'settings-display':  '#sp-body-display',
+  'settings-incidents':'#sp-body-incidents',
+  'settings-risk':     '#sp-body-risk',
+  'refresh':           '#refresh-btn',
+  'help-mode':         '#btn-help'
 };
 
 // ── STATE ─────────────────────────────────────────────────────────────────────
@@ -294,26 +338,26 @@ function tourGetRect(selector){
 }
 
 function tourEnsurePanel(panelKey, callback){
+  var panel = document.getElementById('settings-panel');
+  var isOpen = panel && panel.classList.contains('open');
+
   if(panelKey === 'settings'){
-    var panel = document.getElementById('settings-panel');
-    if(panel && !panel.classList.contains('open')){
+    if(!isOpen){
       toggleSettingsPanel();
-      setTimeout(callback, 300);
-    } else { callback(); }
-  } else if(panelKey === 'right'){
-    var wp = document.getElementById('weather-panel');
-    if(wp && wp.style.display === 'none'){
-      // right panel should always be visible — just scroll to section
-      callback();
+      setTimeout(callback, 320);
     } else { callback(); }
   } else {
-    callback();
+    // Close settings if it was left open from a previous step
+    if(isOpen){
+      toggleSettingsPanel();
+      setTimeout(callback, 320);
+    } else { callback(); }
   }
 }
 
 function tourMapReset(){
   if(typeof map !== 'undefined' && map){
-    map.setView([-27.5, 133.5], 4, { animate: true, duration: 0.8 });
+    map.setView([-27.5, 133.5], 5, { animate: true, duration: 0.8 });
   }
 }
 
