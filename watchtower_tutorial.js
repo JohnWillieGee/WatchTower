@@ -53,7 +53,7 @@ var TOUR_STEPS = [
   {
     id: 'filter-search',
     title: 'Site Filters \u2014 Search',
-    body: 'The Site Filters panel lets you narrow down which sites appear on the map.<br><br><strong>Site count</strong> at the top shows how many sites match your current filters.<br><br><strong>Search</strong> by site name or town to quickly locate a specific transmitter.<br><br><strong>Service Name</strong> dropdown lets you filter to a specific service like ABC Local Radio or Triple J.',
+    body: 'The Site Filters panel lets you narrow down which sites appear on the map.<br><br><strong>Site count</strong> at the top shows how many sites match your current filters.<br><br><strong>Search</strong> by site name to quickly locate a specific transmitter.<br><br><strong>Service Name</strong> dropdown lets you filter to a specific service like ABC Local Radio or Triple J.',
     target: '#filter-sidebar',
     position: 'right',
     panel: null,
@@ -156,7 +156,7 @@ var TOUR_STEPS = [
   {
     id: 'settings-presets',
     title: 'Operational Presets',
-    body: '<strong>Winter</strong> and <strong>Summer</strong> presets reconfigure WatchTower for the season in one click:<br><br>\u2744 <strong>Winter</strong> \u2014 broader proximity distances, Extreme FDR threshold, 48h incident window<br>\u2600 <strong>Summer</strong> \u2014 tighter distances, Very High FDR threshold, 24h window, higher alert floor<br><br>If you adjust any individual setting the preset label changes to <em>Custom</em>. <strong>Restore defaults</strong> resets to Winter.',
+    body: '<strong>Winter</strong> and <strong>Summer</strong> presets reconfigure WatchTower for the season in one click:<br><br>\u2744 <strong>Winter</strong> \u2014 broader proximity distances, Extreme FDR threshold, 48h incident window<br>\u2600 <strong>Summer</strong> \u2014 tighter distances, Very High FDR threshold, 24h window, higher alert floor<br><br>If you adjust any individual setting the preset label changes to <em>Custom</em>.<br><br><strong>Restore defaults</strong> resets everything and automatically applies the correct preset for the current time of year \u2014 Summer for October\u2013March, Winter for April\u2013September.',
     target: '.sp-preset-bar',
     position: 'right',
     panel: 'settings',
