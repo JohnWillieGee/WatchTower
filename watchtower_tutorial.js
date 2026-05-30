@@ -1,0 +1,678 @@
+// ── WatchTower Tutorial & Help Mode ─────────────────────────────────────────
+// External file: watchtower_tutorial.js
+// Loaded by index_new.html — shares global scope with main app.
+// Two modes:
+//   startTutorial() — spotlight guided tour, 12 steps, sequential
+//   startHelp()     — hotspot bubbles, non-linear, always-on until dismissed
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ── STEP DEFINITIONS ─────────────────────────────────────────────────────────
+// Each step:
+//   id         unique string
+//   title      heading shown in tooltip/help card
+//   body       explanation HTML (keep concise)
+//   target     CSS selector for spotlight / hotspot anchor (null = centred modal)
+//   position   tooltip placement: top | bottom | left | right | center
+//   panel      'settings' | 'right' | null — auto-open this panel before showing
+//   action     object describing an interaction step (optional):
+//                { type: 'click', selector, label }   — wait for user to click element
+//                { type: 'next' }                     — standard Next button only
+//   mapReset   true = zoom to full Australia before this step
+
+var TOUR_STEPS = [
+  {
+    id: 'welcome',
+    title: 'Welcome to WatchTower',
+    body: 'WatchTower gives BAI Network Operations a live picture of broadcast site risk across Australia \u2014 combining 341 site locations with real-time fire danger ratings, BOM weather warnings, and active emergency incidents.<br><br>This guided tour will walk you through everything. Use <strong>Next</strong> to advance or <strong>Skip</strong> to exit at any time.',
+    target: null,
+    position: 'center',
+    panel: null,
+    action: { type: 'next' },
+    mapReset: true
+  },
+  {
+    id: 'header-stats',
+    title: 'Header Stats',
+    body: 'The four counters at the top give you an instant operational picture:<br><br><strong>Sites</strong> \u2014 total BAI broadcast sites loaded<br><strong>Warnings</strong> \u2014 active BOM weather warnings nationally<br><strong>Incidents</strong> \u2014 active fire/flood/storm incidents (filtered by your alert level setting)<br><strong>At Risk</strong> \u2014 sites currently flagged by the risk engine',
+    target: '.header-right',
+    position: 'bottom',
+    panel: null,
+    action: { type: 'next' },
+    mapReset: false
+  },
+  {
+    id: 'sites-layer',
+    title: 'Your Broadcast Sites',
+    body: 'Each dot on the map is a BAI broadcast site. Colours indicate modulation type:<br><br><span style="color:#f0a500">\u25cf</span> AM &nbsp; <span style="color:#00d4aa">\u25cf</span> FM &nbsp; <span style="color:#9775fa">\u25cf</span> DAB+ &nbsp; <span style="color:#4dabf7">\u25cf</span> DTV<br><br>Click any site dot to see full service details. Use the <strong>Site Filters</strong> panel (hamburger icon) to filter by state, broadcaster, or modulation.',
+    target: '#btn-sites',
+    position: 'bottom',
+    panel: null,
+    action: { type: 'next' },
+    mapReset: true
+  },
+  {
+    id: 'fdr-layer',
+    title: 'Fire Danger Ratings',
+    body: 'The Fire Danger layer overlays BOM district FDR polygons on the map. Colours match BOM\'s own scale:<br><br><span style="color:#4caf50">\u25a0</span> Moderate &nbsp; <span style="color:#ff6b00">\u25a0</span> High &nbsp; <span style="color:#e53935">\u25a0</span> Extreme &nbsp; <span style="color:#7b1fa2">\u25a0</span> Catastrophic<br><br><strong>Try it:</strong> click the <strong>Fire Danger</strong> button in the toolbar to toggle the layer on.',
+    target: '#btn-fdr',
+    position: 'bottom',
+    panel: null,
+    action: { type: 'click', selector: '#btn-fdr', label: 'Toggle Fire Danger layer' },
+    mapReset: false
+  },
+  {
+    id: 'bom-warnings',
+    title: 'BOM Warnings',
+    body: 'The <strong>Live Weather &amp; Hazards</strong> panel on the right shows active BOM warnings fetched directly from BOM\'s FTP feed \u2014 severe weather, fire weather, cyclones, floods and more.<br><br>Warnings are also drawn as overlays on the map when the <strong>BOM Warnings</strong> layer is active. Click any warning to see district details and a direct link to the BOM warning page.',
+    target: '#sec-warnings',
+    position: 'left',
+    panel: 'right',
+    action: { type: 'next' },
+    mapReset: false
+  },
+  {
+    id: 'incidents',
+    title: 'Active Incidents',
+    body: 'The <strong>Incidents</strong> section lists active fire, flood, and storm incidents sourced from state emergency agencies (RFS, EMV, QFD, CFS, DFES, TasALERT, PFES, ESA).<br><br>Use the state tabs to filter by jurisdiction. The <strong>Minimum alert level</strong> setting in Settings controls what appears \u2014 Advice, Watch &amp; Act, Emergency Warning, or All.<br><br>Click any incident in the list to fly the map to its location.',
+    target: '#sec-incidents',
+    position: 'left',
+    panel: 'right',
+    action: { type: 'next' },
+    mapReset: false
+  },
+  {
+    id: 'risk-engine',
+    title: 'The Risk Engine',
+    body: 'WatchTower automatically scores every site against active hazards and assigns one of four risk tiers:<br><br><span style="color:#f0a500">\u25cf</span> <strong>Advisory</strong> \u2014 hazard in the region, monitor<br><span style="color:#ff8800">\u25cf</span> <strong>Warning</strong> \u2014 hazard within proximity threshold<br><span style="color:#ff4444">\u25cf</span> <strong>Direct Threat</strong> \u2014 hazard directly affecting site area<br><span style="color:#ff0000">\u25cf</span> <strong>Site Impacted</strong> \u2014 site inside active incident zone<br><br>The <strong>At Risk</strong> counter shows how many sites are flagged. Click <strong>Risk</strong> in the header to see the full breakdown.',
+    target: '#btn-risk-panel',
+    position: 'bottom',
+    panel: null,
+    action: { type: 'next' },
+    mapReset: false
+  },
+  {
+    id: 'map-layers',
+    title: 'Map Layers &amp; Controls',
+    body: 'The toolbar along the top of the map gives you control over every overlay layer:<br><br><strong>Borders / Labels</strong> \u2014 state outlines and names<br><strong>Sites</strong> \u2014 broadcast site dots<br><strong>Fire Danger</strong> \u2014 BOM FDR polygons<br><strong>BOM Warnings</strong> \u2014 warning district overlays<br><strong>Marine Warnings</strong> \u2014 coastal and marine alerts<br><strong>NSW Alerts</strong> \u2014 RFS alert zones<br><strong>Incidents</strong> \u2014 incident markers<br><strong>Radar / BOM Radar</strong> \u2014 live rainfall radar<br><strong>Lightning / Wind / Ducting</strong> \u2014 specialist overlays',
+    target: '#map-controls',
+    position: 'bottom',
+    panel: null,
+    action: { type: 'next' },
+    mapReset: false
+  },
+  {
+    id: 'settings',
+    title: 'Settings &amp; Presets',
+    body: 'The Settings panel lets you tune WatchTower for your shift.<br><br><strong>Presets</strong> \u2014 Winter and Summer presets adjust FDR thresholds, incident proximity distances, and alert floors for the season<br><strong>Theme</strong> \u2014 Dark, Natural, or Light to suit your environment<br><strong>Risk thresholds</strong> \u2014 adjust proximity distances for the risk engine<br><strong>Storm warnings</strong> \u2014 toggle AM/FM storm proximity alerting<br><br><strong>Try it:</strong> click the <strong>\u2699 Settings</strong> cog to open the panel.',
+    target: '#settings-toggle',
+    position: 'right',
+    panel: null,
+    action: { type: 'click', selector: '#settings-toggle', label: 'Open Settings panel' },
+    mapReset: false
+  },
+  {
+    id: 'refresh',
+    title: 'Refresh Cycle',
+    body: 'WatchTower automatically refreshes all live data every <strong>5 minutes</strong> \u2014 FDR ratings, BOM warnings, incidents, and radar frames all update together.<br><br>The <strong>Refresh</strong> button in the header lets you trigger an immediate refresh at any time. A countdown in the button shows time until the next auto-refresh.<br><br>This means the NOC wall display stays current without anyone needing to touch it.',
+    target: '#refresh-btn',
+    position: 'bottom',
+    panel: null,
+    action: { type: 'next' },
+    mapReset: false
+  },
+  {
+    id: 'help-mode',
+    title: 'Help Mode',
+    body: 'Once you\'ve finished this tour, you don\'t need to run it again just to look something up.<br><br>The <strong>?</strong> button next to the hamburger icon activates <strong>Help Mode</strong> \u2014 numbered hotspot bubbles appear on every key element. Click any bubble to read about that feature, without leaving the map or interrupting your workflow.<br><br>Click <strong>?</strong> again to dismiss all bubbles.',
+    target: '#btn-help',
+    position: 'right',
+    panel: null,
+    action: { type: 'next' },
+    mapReset: false
+  },
+  {
+    id: 'easter-egg',
+    title: 'One Last Thing\u2026',
+    body: '<div style="text-align:center;padding:8px 0"><div style="font-size:32px;margin-bottom:12px">\ud83d\udd73\ufe0f</div><strong>A challenge for you.</strong><br><br>John G has hidden something somewhere on this page.<br><br>Keep your eyes open \u2014 it\'s subtle.<br><br><span style="font-size:10px;color:var(--text3)">No hints. Good luck.</span></div>',
+    target: null,
+    position: 'center',
+    panel: null,
+    action: { type: 'next' },
+    mapReset: false
+  }
+];
+
+// ── HELP MODE HOTSPOT POSITIONS ───────────────────────────────────────────────
+// Maps step id to a CSS selector — these are the anchor elements for bubbles.
+// Steps with target:null get skipped in help mode (welcome/easter-egg are tour-only).
+var HELP_ANCHORS = {
+  'header-stats':  '.header-right',
+  'sites-layer':   '#btn-sites',
+  'fdr-layer':     '#btn-fdr',
+  'bom-warnings':  '#sec-warnings',
+  'incidents':     '#sec-incidents',
+  'risk-engine':   '#btn-risk-panel',
+  'map-layers':    '#map-controls',
+  'settings':      '#settings-toggle',
+  'refresh':       '#refresh-btn',
+  'help-mode':     '#btn-help'
+};
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+var tourActive    = false;
+var tourStep      = 0;
+var helpActive    = false;
+var tourOverlayEl = null;
+var tourCardEl    = null;
+var helpBubbles   = [];
+
+// ── CSS INJECTION ─────────────────────────────────────────────────────────────
+(function injectTourCSS(){
+  var style = document.createElement('style');
+  style.textContent = [
+    // ── Overlay ──────────────────────────────────────────────────────────────
+    '#tour-overlay{',
+      'position:fixed;inset:0;z-index:9000;pointer-events:none;',
+      'transition:opacity .3s;',
+    '}',
+    '#tour-overlay.active{pointer-events:all;}',
+
+    // Spotlight cutout via box-shadow
+    '#tour-spotlight{',
+      'position:fixed;z-index:9001;border-radius:6px;',
+      'box-shadow:0 0 0 9999px rgba(0,0,0,0.72);',
+      'transition:top .35s cubic-bezier(.4,0,.2,1),',
+                 'left .35s cubic-bezier(.4,0,.2,1),',
+                 'width .35s cubic-bezier(.4,0,.2,1),',
+                 'height .35s cubic-bezier(.4,0,.2,1);',
+      'pointer-events:none;',
+    '}',
+
+    // ── Tour card ─────────────────────────────────────────────────────────────
+    '#tour-card{',
+      'position:fixed;z-index:9100;',
+      'background:var(--panel);border:1px solid var(--border);',
+      'border-radius:8px;padding:18px 20px 14px;',
+      'max-width:320px;min-width:240px;',
+      'box-shadow:0 8px 32px rgba(0,0,0,0.5);',
+      'font-family:monospace;',
+      'animation:tour-card-in .25s ease;',
+    '}',
+    '@keyframes tour-card-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}',
+
+    '#tour-card .tc-step{',
+      'font-size:8px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;',
+      'color:var(--accent2);margin-bottom:6px;',
+    '}',
+    '#tour-card .tc-title{',
+      'font-size:13px;font-weight:700;color:var(--text);margin-bottom:10px;line-height:1.3;',
+    '}',
+    '#tour-card .tc-body{',
+      'font-size:11px;color:var(--text2);line-height:1.6;margin-bottom:14px;',
+    '}',
+    '#tour-card .tc-action{',
+      'font-size:10px;color:var(--accent);background:rgba(240,165,0,0.1);',
+      'border:1px dashed var(--accent);border-radius:4px;',
+      'padding:6px 10px;margin-bottom:12px;',
+    '}',
+    '#tour-card .tc-footer{',
+      'display:flex;align-items:center;justify-content:space-between;',
+      'border-top:1px solid var(--border);padding-top:10px;gap:8px;',
+    '}',
+    '#tour-card .tc-dots{display:flex;gap:4px;align-items:center;}',
+    '#tour-card .tc-dot{',
+      'width:6px;height:6px;border-radius:50%;background:var(--border);transition:background .2s;',
+    '}',
+    '#tour-card .tc-dot.active{background:var(--accent2);}',
+    '#tour-card .tc-dot.done{background:var(--accent2);opacity:0.4;}',
+    '#tour-card .tc-btn{',
+      'font-family:monospace;font-size:10px;padding:5px 12px;border-radius:4px;',
+      'cursor:pointer;border:1px solid var(--border);background:var(--panel2);',
+      'color:var(--text2);transition:all .15s;white-space:nowrap;',
+    '}',
+    '#tour-card .tc-btn:hover{border-color:var(--text2);color:var(--text);}',
+    '#tour-card .tc-btn.primary{',
+      'background:var(--accent2);border-color:var(--accent2);color:#000;font-weight:700;',
+    '}',
+    '#tour-card .tc-btn.primary:hover{opacity:0.88;}',
+    '#tour-card .tc-btn.skip{color:var(--text3);border-color:transparent;background:transparent;}',
+    '#tour-card .tc-btn.skip:hover{color:var(--text2);border-color:var(--border);}',
+
+    // ── Waiting-for-action pulse on target ───────────────────────────────────
+    '.tour-action-target{',
+      'animation:tour-pulse 1.4s ease-in-out infinite;',
+    '}',
+    '@keyframes tour-pulse{',
+      '0%,100%{box-shadow:0 0 0 0 rgba(0,212,170,0.6);}',
+      '50%{box-shadow:0 0 0 8px rgba(0,212,170,0);}',
+    '}',
+
+    // ── Help mode bubbles ─────────────────────────────────────────────────────
+    '.help-bubble{',
+      'position:fixed;z-index:8000;',
+      'width:20px;height:20px;border-radius:50%;',
+      'background:var(--accent2);color:#000;',
+      'font-family:monospace;font-size:10px;font-weight:700;',
+      'display:flex;align-items:center;justify-content:center;',
+      'cursor:pointer;border:2px solid rgba(0,0,0,0.3);',
+      'box-shadow:0 2px 8px rgba(0,0,0,0.4);',
+      'animation:help-pulse 2s ease-in-out infinite;',
+      'transition:transform .15s;',
+    '}',
+    '.help-bubble:hover{transform:scale(1.2);}',
+    '@keyframes help-pulse{',
+      '0%,100%{box-shadow:0 0 0 0 rgba(0,212,170,0.5),0 2px 8px rgba(0,0,0,0.4);}',
+      '60%{box-shadow:0 0 0 7px rgba(0,212,170,0),0 2px 8px rgba(0,0,0,0.4);}',
+    '}',
+
+    '.help-card{',
+      'position:fixed;z-index:8100;',
+      'background:var(--panel);border:1px solid var(--accent2);',
+      'border-radius:7px;padding:12px 14px;max-width:260px;',
+      'box-shadow:0 6px 24px rgba(0,0,0,0.45);',
+      'font-family:monospace;',
+      'animation:tour-card-in .2s ease;',
+    '}',
+    '.help-card .hc-title{',
+      'font-size:11px;font-weight:700;color:var(--text);margin-bottom:6px;',
+    '}',
+    '.help-card .hc-body{',
+      'font-size:10px;color:var(--text2);line-height:1.6;',
+    '}',
+    '.help-card .hc-close{',
+      'position:absolute;top:7px;right:9px;',
+      'font-size:14px;color:var(--text3);cursor:pointer;line-height:1;',
+      'background:none;border:none;padding:0;',
+    '}',
+    '.help-card .hc-close:hover{color:var(--text);}',
+
+    // ── Help button active state ───────────────────────────────────────────────
+    '#btn-help.help-on{',
+      'background:var(--accent2);border-color:var(--accent2);color:#000;font-weight:700;',
+    '}'
+  ].join('');
+  document.head.appendChild(style);
+})();
+
+// ── UTILITY ───────────────────────────────────────────────────────────────────
+function tourGetRect(selector){
+  if(!selector) return null;
+  var el = document.querySelector(selector);
+  if(!el) return null;
+  return el.getBoundingClientRect();
+}
+
+function tourEnsurePanel(panelKey, callback){
+  if(panelKey === 'settings'){
+    var panel = document.getElementById('settings-panel');
+    if(panel && !panel.classList.contains('open')){
+      toggleSettingsPanel();
+      setTimeout(callback, 300);
+    } else { callback(); }
+  } else if(panelKey === 'right'){
+    var wp = document.getElementById('weather-panel');
+    if(wp && wp.style.display === 'none'){
+      // right panel should always be visible — just scroll to section
+      callback();
+    } else { callback(); }
+  } else {
+    callback();
+  }
+}
+
+function tourMapReset(){
+  if(typeof map !== 'undefined' && map){
+    map.setView([-27.5, 133.5], 4, { animate: true, duration: 0.8 });
+  }
+}
+
+// ── SPOTLIGHT POSITIONING ─────────────────────────────────────────────────────
+function tourPositionSpotlight(selector){
+  var spot = document.getElementById('tour-spotlight');
+  if(!spot) return;
+  if(!selector){
+    // centred modal — hide spotlight, card is centred
+    spot.style.opacity = '0';
+    return;
+  }
+  var rect = tourGetRect(selector);
+  if(!rect){ spot.style.opacity = '0'; return; }
+  var pad = 8;
+  spot.style.opacity = '1';
+  spot.style.top    = (rect.top    - pad) + 'px';
+  spot.style.left   = (rect.left   - pad) + 'px';
+  spot.style.width  = (rect.width  + pad*2) + 'px';
+  spot.style.height = (rect.height + pad*2) + 'px';
+}
+
+// ── CARD POSITIONING ──────────────────────────────────────────────────────────
+function tourPositionCard(selector, position){
+  var card = document.getElementById('tour-card');
+  if(!card) return;
+  var vw = window.innerWidth, vh = window.innerHeight;
+
+  if(!selector || position === 'center'){
+    card.style.top  = '50%';
+    card.style.left = '50%';
+    card.style.transform = 'translate(-50%,-50%)';
+    card.style.maxWidth = '380px';
+    return;
+  }
+  card.style.transform = '';
+  card.style.maxWidth = '320px';
+
+  var rect = tourGetRect(selector);
+  if(!rect){
+    card.style.top = '50%'; card.style.left = '50%';
+    card.style.transform = 'translate(-50%,-50%)';
+    return;
+  }
+
+  var pad = 16, cw = 330, ch = card.offsetHeight || 200;
+  var t, l;
+
+  if(position === 'bottom'){
+    t = rect.bottom + pad;
+    l = rect.left + rect.width/2 - cw/2;
+  } else if(position === 'top'){
+    t = rect.top - ch - pad;
+    l = rect.left + rect.width/2 - cw/2;
+  } else if(position === 'right'){
+    t = rect.top + rect.height/2 - ch/2;
+    l = rect.right + pad;
+  } else if(position === 'left'){
+    t = rect.top + rect.height/2 - ch/2;
+    l = rect.left - cw - pad;
+  }
+
+  // Clamp to viewport
+  l = Math.max(12, Math.min(l, vw - cw - 12));
+  t = Math.max(12, Math.min(t, vh - ch - 12));
+
+  card.style.top  = t + 'px';
+  card.style.left = l + 'px';
+}
+
+// ── BUILD CARD HTML ───────────────────────────────────────────────────────────
+function tourBuildCard(step, idx, total){
+  var isAction = step.action && step.action.type === 'click';
+  var isLast   = idx === total - 1;
+  var isFirst  = idx === 0;
+
+  // Progress dots (max 12 shown)
+  var dots = '';
+  for(var i=0; i<total; i++){
+    var cls = i === idx ? 'active' : (i < idx ? 'done' : '');
+    dots += '<div class="tc-dot ' + cls + '"></div>';
+  }
+
+  var actionHtml = isAction
+    ? '<div class="tc-action">\u27a4 ' + step.action.label + '</div>'
+    : '';
+
+  var nextLabel = isLast ? 'Finish \u2713' : 'Next \u2192';
+  var nextBtn   = isAction
+    ? '' // no Next button when waiting for an action
+    : '<button class="tc-btn primary" id="tour-next-btn">' + nextLabel + '</button>';
+
+  var backBtn = !isFirst
+    ? '<button class="tc-btn" id="tour-back-btn">\u2190 Back</button>'
+    : '';
+
+  return [
+    '<div class="tc-step">Step ' + (idx+1) + ' of ' + total + '</div>',
+    '<div class="tc-title">' + step.title + '</div>',
+    '<div class="tc-body">' + step.body + '</div>',
+    actionHtml,
+    '<div class="tc-footer">',
+      '<div class="tc-dots">' + dots + '</div>',
+      '<div style="display:flex;gap:6px;align-items:center;">',
+        backBtn,
+        nextBtn,
+        '<button class="tc-btn skip" id="tour-skip-btn">Skip</button>',
+      '</div>',
+    '</div>'
+  ].join('');
+}
+
+// ── ACTION LISTENER ───────────────────────────────────────────────────────────
+var _tourActionHandler = null;
+
+function tourWatchAction(step){
+  if(!step.action || step.action.type !== 'click') return;
+  var targetSel = step.action.selector;
+  var el = document.querySelector(targetSel);
+  if(!el) return;
+
+  el.classList.add('tour-action-target');
+
+  function handler(){
+    el.classList.remove('tour-action-target');
+    el.removeEventListener('click', handler);
+    _tourActionHandler = null;
+    // Small delay so the click's visual effect plays first
+    setTimeout(function(){ tourAdvance(1); }, 350);
+  }
+  el.addEventListener('click', handler);
+  _tourActionHandler = { el: el, fn: handler };
+}
+
+function tourClearActionListener(){
+  if(_tourActionHandler){
+    _tourActionHandler.el.classList.remove('tour-action-target');
+    _tourActionHandler.el.removeEventListener('click', _tourActionHandler.fn);
+    _tourActionHandler = null;
+  }
+}
+
+// ── RENDER STEP ───────────────────────────────────────────────────────────────
+function tourRenderStep(idx){
+  var step  = TOUR_STEPS[idx];
+  var total = TOUR_STEPS.length;
+  var card  = document.getElementById('tour-card');
+  if(!card) return;
+
+  if(step.mapReset) tourMapReset();
+
+  tourEnsurePanel(step.panel, function(){
+    // Re-query after panel animation
+    setTimeout(function(){
+      tourPositionSpotlight(step.target);
+      card.innerHTML = tourBuildCard(step, idx, total);
+      tourPositionCard(step.target, step.position);
+
+      // Wire buttons
+      var nextBtn = document.getElementById('tour-next-btn');
+      var backBtn = document.getElementById('tour-back-btn');
+      var skipBtn = document.getElementById('tour-skip-btn');
+      if(nextBtn) nextBtn.addEventListener('click', function(){ tourAdvance(1); });
+      if(backBtn) backBtn.addEventListener('click', function(){ tourAdvance(-1); });
+      if(skipBtn) skipBtn.addEventListener('click', endTutorial);
+
+      // Wire action listener
+      tourWatchAction(step);
+    }, step.panel ? 320 : 0);
+  });
+}
+
+function tourAdvance(dir){
+  tourClearActionListener();
+  var next = tourStep + dir;
+  if(next >= TOUR_STEPS.length){
+    endTutorial(true);
+    return;
+  }
+  if(next < 0) next = 0;
+  tourStep = next;
+  // Re-animate card
+  var card = document.getElementById('tour-card');
+  if(card){ card.style.animation = 'none'; void card.offsetWidth; card.style.animation = ''; }
+  tourRenderStep(tourStep);
+}
+
+// ── START / END TUTORIAL ──────────────────────────────────────────────────────
+function startTutorial(){
+  if(tourActive) return;
+  tourActive = true;
+  tourStep   = 0;
+
+  // Close settings panel if open so we control it
+  var panel = document.getElementById('settings-panel');
+  if(panel && panel.classList.contains('open')) toggleSettingsPanel();
+
+  // Build overlay + spotlight + card
+  var overlay = document.createElement('div');
+  overlay.id = 'tour-overlay';
+  overlay.className = 'active';
+  document.body.appendChild(overlay);
+  tourOverlayEl = overlay;
+
+  var spot = document.createElement('div');
+  spot.id = 'tour-spotlight';
+  document.body.appendChild(spot);
+
+  var card = document.createElement('div');
+  card.id = 'tour-card';
+  document.body.appendChild(card);
+  tourCardEl = card;
+
+  // Update tutorial button state
+  var tBtn = document.getElementById('btn-tutorial');
+  if(tBtn){ tBtn.textContent = '\u2715 Exit Tour'; tBtn.onclick = endTutorial; }
+
+  tourRenderStep(0);
+}
+
+function endTutorial(completed){
+  if(!tourActive) return;
+  tourActive = false;
+  tourClearActionListener();
+
+  if(tourOverlayEl){ tourOverlayEl.remove(); tourOverlayEl = null; }
+  var spot = document.getElementById('tour-spotlight');
+  if(spot) spot.remove();
+  if(tourCardEl){ tourCardEl.remove(); tourCardEl = null; }
+
+  // Restore tutorial button
+  var tBtn = document.getElementById('btn-tutorial');
+  if(tBtn){ tBtn.innerHTML = '\u{1F393} Tutorial'; tBtn.onclick = startTutorial; }
+
+  // Close settings if we left it open
+  var panel = document.getElementById('settings-panel');
+  if(panel && panel.classList.contains('open')) toggleSettingsPanel();
+
+  if(completed === true){
+    showToast('\u2713 Tour complete \u2014 click \u2753 any time for help', false);
+  }
+}
+
+// ── HELP MODE ─────────────────────────────────────────────────────────────────
+function startHelp(){
+  if(helpActive){ endHelp(); return; }
+  helpActive = true;
+
+  var btn = document.getElementById('btn-help');
+  if(btn) btn.classList.add('help-on');
+
+  var num = 1;
+  TOUR_STEPS.forEach(function(step){
+    var anchor = HELP_ANCHORS[step.id];
+    if(!anchor) return;
+    var rect = tourGetRect(anchor);
+    if(!rect) return;
+
+    var bubble = document.createElement('div');
+    bubble.className = 'help-bubble';
+    bubble.textContent = num;
+    bubble.setAttribute('data-tour-id', step.id);
+    bubble.setAttribute('data-num', num);
+    // Position at top-right corner of anchor element
+    bubble.style.top  = (rect.top  - 8 + window.scrollY) + 'px';
+    bubble.style.left = (rect.right - 12) + 'px';
+    bubble.style.animationDelay = (num * 0.08) + 's';
+
+    bubble.addEventListener('click', function(e){
+      e.stopPropagation();
+      helpShowCard(step, bubble);
+    });
+
+    document.body.appendChild(bubble);
+    helpBubbles.push(bubble);
+    num++;
+  });
+
+  // Click outside to close any open help card
+  document.addEventListener('click', helpOutsideClick);
+}
+
+function endHelp(){
+  helpActive = false;
+  helpBubbles.forEach(function(b){ b.remove(); });
+  helpBubbles = [];
+  var cards = document.querySelectorAll('.help-card');
+  cards.forEach(function(c){ c.remove(); });
+  var btn = document.getElementById('btn-help');
+  if(btn) btn.classList.remove('help-on');
+  document.removeEventListener('click', helpOutsideClick);
+}
+
+function helpOutsideClick(e){
+  if(!e.target.closest('.help-card') && !e.target.closest('.help-bubble')){
+    document.querySelectorAll('.help-card').forEach(function(c){ c.remove(); });
+  }
+}
+
+function helpShowCard(step, bubbleEl){
+  // Close any existing help card
+  document.querySelectorAll('.help-card').forEach(function(c){ c.remove(); });
+
+  var card = document.createElement('div');
+  card.className = 'help-card';
+  card.style.position = 'fixed';
+
+  card.innerHTML = [
+    '<button class="hc-close" title="Close">\u2715</button>',
+    '<div class="hc-title">' + bubbleEl.getAttribute('data-num') + '. ' + step.title + '</div>',
+    '<div class="hc-body">' + step.body + '</div>'
+  ].join('');
+
+  document.body.appendChild(card);
+
+  // Position relative to bubble
+  var bRect = bubbleEl.getBoundingClientRect();
+  var vw = window.innerWidth, vh = window.innerHeight;
+  var cw = 270, ch = card.offsetHeight || 160;
+  var t = bRect.bottom + 8;
+  var l = bRect.left - cw + 20;
+  l = Math.max(12, Math.min(l, vw - cw - 12));
+  t = Math.max(12, Math.min(t, vh - ch - 12));
+  card.style.top  = t + 'px';
+  card.style.left = l + 'px';
+
+  card.querySelector('.hc-close').addEventListener('click', function(e){
+    e.stopPropagation();
+    card.remove();
+  });
+}
+
+// ── REPOSITION ON RESIZE ──────────────────────────────────────────────────────
+window.addEventListener('resize', function(){
+  if(tourActive){
+    var step = TOUR_STEPS[tourStep];
+    tourPositionSpotlight(step.target);
+    tourPositionCard(step.target, step.position);
+  }
+  if(helpActive){
+    // Reposition bubbles
+    var idx = 0;
+    TOUR_STEPS.forEach(function(step){
+      var anchor = HELP_ANCHORS[step.id];
+      if(!anchor) return;
+      var rect = tourGetRect(anchor);
+      if(!rect || !helpBubbles[idx]) return;
+      helpBubbles[idx].style.top  = (rect.top  - 8) + 'px';
+      helpBubbles[idx].style.left = (rect.right - 12) + 'px';
+      idx++;
+    });
+  }
+});
