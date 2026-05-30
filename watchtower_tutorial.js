@@ -419,19 +419,22 @@ function tourEnsurePanel(step, callback){
   }
   // Always scroll the target section into view within the wp-body scroll container
   if(panelKey === 'right' && step.target){
-    var scrollDelay = weatherOpen ? 60 : 360;  // if panel was closed, wait for it to open first
+    var scrollDelay = weatherOpen ? 60 : 360;
     setTimeout(function(){
       var el = document.querySelector(step.target);
-      if(el){
-        var wpBody = document.querySelector('.wp-body');
-        if(wpBody){
-          wpBody.scrollTo({ top: el.offsetTop - 12, behavior: 'smooth' });
-        } else {
-          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      var wpBody = document.querySelector('.wp-body');
+      if(el && wpBody){
+        // Walk up the offset chain to get position relative to wpBody
+        var top = 0;
+        var node = el;
+        while(node && node !== wpBody){
+          top += node.offsetTop;
+          node = node.offsetParent;
         }
+        wpBody.scrollTop = Math.max(0, top - 12);
       }
     }, scrollDelay);
-    delay = Math.max(delay, scrollDelay + 250);
+    delay = Math.max(delay, scrollDelay + 80);
   }
 
   // Settings panel
