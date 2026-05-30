@@ -43,21 +43,32 @@ var TOUR_STEPS = [
   {
     id: 'sites-layer',
     title: 'Your Broadcast Sites',
-    body: 'Each dot on the map is a BAI broadcast site. Colours indicate modulation type:<br><br><span style="color:#f0a500">\u25cf</span> AM &nbsp; <span style="color:#00d4aa">\u25cf</span> FM &nbsp; <span style="color:#9775fa">\u25cf</span> DAB+ &nbsp; <span style="color:#4dabf7">\u25cf</span> DTV<br><br>Click any site dot to see full service details. Use the <strong>Site Filters</strong> panel (hamburger icon) to filter by state, broadcaster, or modulation.',
+    body: 'Each dot on the map is a BAI broadcast site. Colours indicate modulation type:<br><br><span style="color:#f0a500">\u25cf</span> AM &nbsp; <span style="color:#00d4aa">\u25cf</span> FM &nbsp; <span style="color:#9775fa">\u25cf</span> DAB+ &nbsp; <span style="color:#4dabf7">\u25cf</span> DTV<br><br>Click any site dot to see full service details. Use the <strong>Site Filters</strong> panel \u2014 click the <strong>\u2630 hamburger</strong> icon at top-left to open it and filter sites by state, broadcaster, or modulation.',
     target: '#map-wrap',
     position: 'center',
     panel: null,
     action: { type: 'next' },
-    mapReset: true
+    mapReset: true,
+    openFilterSidebar: true
   },
   {
     id: 'fdr-layer',
     title: 'Fire Danger Ratings',
-    body: 'The Fire Danger layer overlays BOM district FDR polygons across the map. Colours match BOM\'s own scale:<br><br><span style="color:#4caf50">\u25a0</span> Moderate &nbsp; <span style="color:#ff6b00">\u25a0</span> High &nbsp; <span style="color:#e53935">\u25a0</span> Extreme &nbsp; <span style="color:#7b1fa2">\u25a0</span> Catastrophic<br><br><strong>Try it:</strong> click the <strong>Fire Danger</strong> button in the toolbar above the map to see the districts appear.',
+    body: 'The Fire Danger layer overlays BOM district FDR polygons across the map. Colours match BOM\'s own scale:<br><br><span style="color:#4caf50">\u25a0</span> Moderate &nbsp; <span style="color:#ff6b00">\u25a0</span> High &nbsp; <span style="color:#e53935">\u25a0</span> Extreme &nbsp; <span style="color:#7b1fa2">\u25a0</span> Catastrophic<br><br><strong>Try it:</strong> click the <strong>Fire Danger</strong> button in the toolbar above to toggle the layer on.',
     target: '#map-wrap',
     position: 'center',
     panel: null,
     action: { type: 'click', selector: '#btn-fdr', label: 'Click \u201cFire Danger\u201d in the toolbar above the map' },
+    mapReset: false
+  },
+  {
+    id: 'fdr-result',
+    title: 'Fire Danger Ratings',
+    body: 'The FDR polygons are now visible on the map. Each coloured region represents a BOM fire danger district with its current rating for today\'s forecast period.<br><br>Sites inside high-risk districts are automatically flagged by the risk engine. You can adjust the minimum FDR level that triggers risk scoring in the Settings panel.',
+    target: '#map-wrap',
+    position: 'center',
+    panel: null,
+    action: { type: 'next' },
     mapReset: false
   },
   {
@@ -83,12 +94,23 @@ var TOUR_STEPS = [
   {
     id: 'risk-engine',
     title: 'The Risk Engine',
-    body: 'WatchTower automatically scores every site against active hazards and assigns one of four risk tiers:<br><br><span style="color:#f0a500">\u25cf</span> <strong>Advisory</strong> \u2014 hazard in the region, monitor<br><span style="color:#ff8800">\u25cf</span> <strong>Warning</strong> \u2014 hazard within proximity threshold<br><span style="color:#ff4444">\u25cf</span> <strong>Direct Threat</strong> \u2014 hazard directly affecting site area<br><span style="color:#ff0000">\u25cf</span> <strong>Site Impacted</strong> \u2014 site inside active incident zone<br><br>Click <strong>Risk</strong> in the header to see the full breakdown panel.',
+    body: 'WatchTower automatically scores every site against active hazards and assigns one of four risk tiers:<br><br><span style="color:#f0a500">\u25cf</span> <strong>Advisory</strong> \u2014 hazard in the region, monitor<br><span style="color:#ff8800">\u25cf</span> <strong>Warning</strong> \u2014 hazard within proximity threshold<br><span style="color:#ff4444">\u25cf</span> <strong>Direct Threat</strong> \u2014 hazard directly affecting site area<br><span style="color:#ff0000">\u25cf</span> <strong>Site Impacted</strong> \u2014 site inside active incident zone<br><br><strong>Try it:</strong> click the <strong>Risk</strong> button in the header to open the risk breakdown panel.',
     target: '#btn-risk-panel',
     position: 'bottom',
     panel: null,
-    action: { type: 'next' },
+    action: { type: 'click', selector: '#btn-risk-panel', label: 'Click \u201cRisk\u201d to open the risk panel' },
     mapReset: false
+  },
+  {
+    id: 'risk-panel',
+    title: 'Risk Breakdown Panel',
+    body: 'The Risk panel shows every site currently flagged, grouped by risk tier.<br><br>Each entry shows the site name, state, modulation type, and the reason it was flagged \u2014 which incident or FDR district triggered the score.<br><br>Click any site in the list to fly the map to its location. The <strong>At Risk</strong> counter in the header reflects the total number of flagged sites.',
+    target: '#risk-panel',
+    position: 'left',
+    panel: null,
+    action: { type: 'next' },
+    mapReset: false,
+    closeRiskPanel: false
   },
   {
     id: 'map-layers',
@@ -284,7 +306,7 @@ var helpBubbles   = [];
 
     // ── Help mode bubbles ─────────────────────────────────────────────────────
     '.help-bubble{',
-      'position:fixed;z-index:8000;',
+      'position:fixed;z-index:9500;',
       'width:20px;height:20px;border-radius:50%;',
       'background:var(--accent2);color:#000;',
       'font-family:monospace;font-size:10px;font-weight:700;',
@@ -301,7 +323,7 @@ var helpBubbles   = [];
     '}',
 
     '.help-card{',
-      'position:fixed;z-index:8100;',
+      'position:fixed;z-index:9600;',
       'background:var(--panel);border:1px solid var(--accent2);',
       'border-radius:7px;padding:12px 14px;max-width:260px;',
       'box-shadow:0 6px 24px rgba(0,0,0,0.45);',
@@ -337,22 +359,47 @@ function tourGetRect(selector){
   return el.getBoundingClientRect();
 }
 
-function tourEnsurePanel(panelKey, callback){
-  var panel = document.getElementById('settings-panel');
-  var isOpen = panel && panel.classList.contains('open');
+function tourEnsurePanel(step, callback){
+  var panelKey = step.panel;
+  var settingsPanel = document.getElementById('settings-panel');
+  var settingsOpen  = settingsPanel && settingsPanel.classList.contains('open');
+  var filterSidebar = document.getElementById('filter-sidebar');
+  var filterOpen    = filterSidebar && !filterSidebar.classList.contains('collapsed');
+  var riskPanel     = document.getElementById('risk-panel');
+  var riskOpen      = riskPanel && riskPanel.style.display !== 'none' && riskPanel.style.display !== '';
+  var delay = 0;
+
+  // Close risk panel unless we're on the risk-panel step
+  if(riskOpen && step.id !== 'risk-panel'){
+    toggleRiskPanel();
+    delay = Math.max(delay, 280);
+  }
+
+  // Close filter sidebar unless this step opens it
+  if(filterOpen && !step.openFilterSidebar){
+    toggleFilterSidebar();
+    delay = Math.max(delay, 280);
+  }
+
+  // Open filter sidebar if requested
+  if(step.openFilterSidebar && !filterOpen){
+    toggleFilterSidebar();
+    delay = Math.max(delay, 320);
+  }
 
   if(panelKey === 'settings'){
-    if(!isOpen){
+    if(!settingsOpen){
       toggleSettingsPanel();
-      setTimeout(callback, 320);
-    } else { callback(); }
+      delay = Math.max(delay, 320);
+    }
   } else {
-    // Close settings if it was left open from a previous step
-    if(isOpen){
+    if(settingsOpen){
       toggleSettingsPanel();
-      setTimeout(callback, 320);
-    } else { callback(); }
+      delay = Math.max(delay, 320);
+    }
   }
+
+  setTimeout(callback, delay);
 }
 
 function tourMapReset(){
@@ -531,7 +578,7 @@ function tourRenderStep(idx){
 
   if(step.mapReset) tourMapReset();
 
-  tourEnsurePanel(step.panel, function(){
+  tourEnsurePanel(step, function(){
     // Re-query after panel animation
     setTimeout(function(){
       tourPositionSpotlight(step.target);
@@ -615,9 +662,13 @@ function endTutorial(completed){
   var tBtn = document.getElementById('btn-tutorial');
   if(tBtn){ tBtn.innerHTML = '\u{1F393} Tutorial'; tBtn.onclick = startTutorial; }
 
-  // Close settings if we left it open
+  // Close any panels we may have left open
   var panel = document.getElementById('settings-panel');
   if(panel && panel.classList.contains('open')) toggleSettingsPanel();
+  var filterSidebar = document.getElementById('filter-sidebar');
+  if(filterSidebar && !filterSidebar.classList.contains('collapsed')) toggleFilterSidebar();
+  var riskPanel = document.getElementById('risk-panel');
+  if(riskPanel && riskPanel.style.display !== 'none' && riskPanel.style.display !== '') toggleRiskPanel();
 
   if(completed === true){
     showToast('\u2713 Tour complete \u2014 click \u2753 any time for help', false);
@@ -625,6 +676,9 @@ function endTutorial(completed){
 }
 
 // ── HELP MODE ─────────────────────────────────────────────────────────────────
+var _helpOpenedSettings = false;
+var _helpOpenedWeather  = false;
+
 function startHelp(){
   if(helpActive){ endHelp(); return; }
   helpActive = true;
@@ -632,6 +686,25 @@ function startHelp(){
   var btn = document.getElementById('btn-help');
   if(btn) btn.classList.add('help-on');
 
+  // Open panels that contain anchors so bubbles position correctly
+  var settingsPanel = document.getElementById('settings-panel');
+  var weatherPanel  = document.getElementById('weather-panel');
+  _helpOpenedSettings = settingsPanel && !settingsPanel.classList.contains('open');
+  _helpOpenedWeather  = weatherPanel  && weatherPanel.classList.contains('collapsed');
+
+  if(_helpOpenedSettings) toggleSettingsPanel();
+  if(_helpOpenedWeather)  toggleWeatherPanel();
+
+  // Wait for panels to animate open before placing bubbles
+  var delay = (_helpOpenedSettings || _helpOpenedWeather) ? 350 : 0;
+  setTimeout(function(){
+    helpPlaceBubbles();
+    document.addEventListener('click', helpOutsideClick);
+  }, delay);
+}
+
+function helpPlaceBubbles(){
+  helpBubbles = [];
   var num = 1;
   TOUR_STEPS.forEach(function(step){
     var anchor = HELP_ANCHORS[step.id];
@@ -644,8 +717,7 @@ function startHelp(){
     bubble.textContent = num;
     bubble.setAttribute('data-tour-id', step.id);
     bubble.setAttribute('data-num', num);
-    // Position at top-right corner of anchor element
-    bubble.style.top  = (rect.top  - 8 + window.scrollY) + 'px';
+    bubble.style.top  = (rect.top  - 8) + 'px';
     bubble.style.left = (rect.right - 12) + 'px';
     bubble.style.animationDelay = (num * 0.08) + 's';
 
@@ -658,9 +730,6 @@ function startHelp(){
     helpBubbles.push(bubble);
     num++;
   });
-
-  // Click outside to close any open help card
-  document.addEventListener('click', helpOutsideClick);
 }
 
 function endHelp(){
@@ -672,6 +741,18 @@ function endHelp(){
   var btn = document.getElementById('btn-help');
   if(btn) btn.classList.remove('help-on');
   document.removeEventListener('click', helpOutsideClick);
+
+  // Close panels we opened
+  if(_helpOpenedSettings){
+    var sp = document.getElementById('settings-panel');
+    if(sp && sp.classList.contains('open')) toggleSettingsPanel();
+  }
+  if(_helpOpenedWeather){
+    var wp = document.getElementById('weather-panel');
+    if(wp && !wp.classList.contains('collapsed')) toggleWeatherPanel();
+  }
+  _helpOpenedSettings = false;
+  _helpOpenedWeather  = false;
 }
 
 function helpOutsideClick(e){
@@ -721,16 +802,8 @@ window.addEventListener('resize', function(){
     tourPositionCard(step.target, step.position);
   }
   if(helpActive){
-    // Reposition bubbles
-    var idx = 0;
-    TOUR_STEPS.forEach(function(step){
-      var anchor = HELP_ANCHORS[step.id];
-      if(!anchor) return;
-      var rect = tourGetRect(anchor);
-      if(!rect || !helpBubbles[idx]) return;
-      helpBubbles[idx].style.top  = (rect.top  - 8) + 'px';
-      helpBubbles[idx].style.left = (rect.right - 12) + 'px';
-      idx++;
-    });
+    // Remove and replace all bubbles at updated positions
+    helpBubbles.forEach(function(b){ b.remove(); });
+    helpPlaceBubbles();
   }
 });
