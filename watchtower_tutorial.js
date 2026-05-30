@@ -43,13 +43,34 @@ var TOUR_STEPS = [
   {
     id: 'sites-layer',
     title: 'Your Broadcast Sites',
-    body: 'Each dot on the map is a BAI broadcast site. Colours indicate modulation type:<br><br><span style="color:#f0a500">\u25cf</span> AM &nbsp; <span style="color:#00d4aa">\u25cf</span> FM &nbsp; <span style="color:#9775fa">\u25cf</span> DAB+ &nbsp; <span style="color:#4dabf7">\u25cf</span> DTV<br><br>Click any site dot to see full service details. Use the <strong>Site Filters</strong> panel \u2014 click the <strong>\u2630 hamburger</strong> icon at top-left to open it and filter sites by state, broadcaster, or modulation.',
+    body: 'Each dot on the map is a BAI broadcast site. Colours indicate modulation type:<br><br><span style="color:#f0a500">\u25cf</span> AM &nbsp; <span style="color:#00d4aa">\u25cf</span> FM &nbsp; <span style="color:#9775fa">\u25cf</span> DAB+ &nbsp; <span style="color:#4dabf7">\u25cf</span> DTV<br><br>Click any site dot to see full service details.<br><br><strong>Try it:</strong> click the <strong>\u2630</strong> hamburger icon at top-left to open the Site Filters panel.',
     target: '#map-wrap',
     position: 'center',
     panel: null,
+    action: { type: 'click', selector: 'button[onclick="toggleFilterSidebar()"]', label: 'Click the \u2630 hamburger to open Site Filters' },
+    mapReset: true
+  },
+  {
+    id: 'filter-search',
+    title: 'Site Filters \u2014 Search',
+    body: 'The Site Filters panel lets you narrow down which sites appear on the map.<br><br><strong>Site count</strong> at the top shows how many sites match your current filters.<br><br><strong>Search</strong> by site name or town to quickly locate a specific transmitter.<br><br><strong>Service Name</strong> dropdown lets you filter to a specific service like ABC Local Radio or Triple J.',
+    target: '#filter-sidebar',
+    position: 'right',
+    panel: null,
     action: { type: 'next' },
-    mapReset: true,
-    openFilterSidebar: true
+    mapReset: false,
+    keepFilterSidebar: true
+  },
+  {
+    id: 'filter-chips',
+    title: 'Site Filters \u2014 Filter Chips',
+    body: 'Click any chip to filter the map to that group. Chips combine with AND logic \u2014 selecting <strong>ABC</strong> and <strong>NSW</strong> shows only ABC sites in NSW.<br><br><strong>Broadcaster</strong> \u2014 filter by network (ABC, SBS, commercial, community)<br><strong>State</strong> \u2014 limit to one or more states<br><strong>Modulation</strong> \u2014 AM, FM, DAB+ or DTV only<br><strong>Service Purpose</strong> \u2014 national, commercial, community, retransmission<br><br>Click <strong>Clear</strong> to reset all filters.',
+    target: '#filter-sidebar',
+    position: 'right',
+    panel: null,
+    action: { type: 'next' },
+    mapReset: false,
+    keepFilterSidebar: true
   },
   {
     id: 'fdr-layer',
@@ -210,10 +231,14 @@ var TOUR_STEPS = [
 var HELP_ANCHORS = {
   'header-stats':      '.header-right',
   'sites-layer':       '#btn-sites',
+  'filter-search':     '#fs-search',
+  'filter-chips':      '#chip-state',
   'fdr-layer':         '#btn-fdr',
+  'fdr-result':        '#btn-fdr',
   'bom-warnings':      '#sec-warnings',
   'incidents':         '#sec-incidents',
   'risk-engine':       '#btn-risk-panel',
+  'risk-panel':        '#btn-risk-panel',
   'map-layers':        '#map-controls',
   'settings-open':     '#settings-toggle',
   'settings-presets':  '.sp-preset-bar',
@@ -365,6 +390,8 @@ function tourEnsurePanel(step, callback){
   var settingsOpen  = settingsPanel && settingsPanel.classList.contains('open');
   var filterSidebar = document.getElementById('filter-sidebar');
   var filterOpen    = filterSidebar && !filterSidebar.classList.contains('collapsed');
+  var weatherPanel  = document.getElementById('weather-panel');
+  var weatherOpen   = weatherPanel  && !weatherPanel.classList.contains('collapsed');
   var riskPanel     = document.getElementById('risk-panel');
   var riskOpen      = riskPanel && riskPanel.style.display !== 'none' && riskPanel.style.display !== '';
   var delay = 0;
@@ -375,18 +402,23 @@ function tourEnsurePanel(step, callback){
     delay = Math.max(delay, 280);
   }
 
-  // Close filter sidebar unless this step opens it
-  if(filterOpen && !step.openFilterSidebar){
+  // Filter sidebar — close unless this step keeps it open
+  if(filterOpen && !step.keepFilterSidebar && !step.openFilterSidebar){
     toggleFilterSidebar();
     delay = Math.max(delay, 280);
   }
-
-  // Open filter sidebar if requested
   if(step.openFilterSidebar && !filterOpen){
     toggleFilterSidebar();
     delay = Math.max(delay, 320);
   }
 
+  // Weather panel — open if this step needs right panel content
+  if(panelKey === 'right' && !weatherOpen){
+    toggleWeatherPanel();
+    delay = Math.max(delay, 320);
+  }
+
+  // Settings panel
   if(panelKey === 'settings'){
     if(!settingsOpen){
       toggleSettingsPanel();
@@ -667,6 +699,8 @@ function endTutorial(completed){
   if(panel && panel.classList.contains('open')) toggleSettingsPanel();
   var filterSidebar = document.getElementById('filter-sidebar');
   if(filterSidebar && !filterSidebar.classList.contains('collapsed')) toggleFilterSidebar();
+  var weatherPanel = document.getElementById('weather-panel');
+  if(weatherPanel && !weatherPanel.classList.contains('collapsed')) toggleWeatherPanel();
   var riskPanel = document.getElementById('risk-panel');
   if(riskPanel && riskPanel.style.display !== 'none' && riskPanel.style.display !== '') toggleRiskPanel();
 
@@ -678,6 +712,7 @@ function endTutorial(completed){
 // ── HELP MODE ─────────────────────────────────────────────────────────────────
 var _helpOpenedSettings = false;
 var _helpOpenedWeather  = false;
+var _helpOpenedFilter   = false;
 
 function startHelp(){
   if(helpActive){ endHelp(); return; }
@@ -689,14 +724,17 @@ function startHelp(){
   // Open panels that contain anchors so bubbles position correctly
   var settingsPanel = document.getElementById('settings-panel');
   var weatherPanel  = document.getElementById('weather-panel');
+  var filterSidebar = document.getElementById('filter-sidebar');
   _helpOpenedSettings = settingsPanel && !settingsPanel.classList.contains('open');
   _helpOpenedWeather  = weatherPanel  && weatherPanel.classList.contains('collapsed');
+  _helpOpenedFilter   = filterSidebar && filterSidebar.classList.contains('collapsed');
 
   if(_helpOpenedSettings) toggleSettingsPanel();
   if(_helpOpenedWeather)  toggleWeatherPanel();
+  if(_helpOpenedFilter)   toggleFilterSidebar();
 
   // Wait for panels to animate open before placing bubbles
-  var delay = (_helpOpenedSettings || _helpOpenedWeather) ? 350 : 0;
+  var delay = (_helpOpenedSettings || _helpOpenedWeather || _helpOpenedFilter) ? 380 : 0;
   setTimeout(function(){
     helpPlaceBubbles();
     document.addEventListener('click', helpOutsideClick);
@@ -751,8 +789,13 @@ function endHelp(){
     var wp = document.getElementById('weather-panel');
     if(wp && !wp.classList.contains('collapsed')) toggleWeatherPanel();
   }
+  if(_helpOpenedFilter){
+    var fs = document.getElementById('filter-sidebar');
+    if(fs && !fs.classList.contains('collapsed')) toggleFilterSidebar();
+  }
   _helpOpenedSettings = false;
   _helpOpenedWeather  = false;
+  _helpOpenedFilter   = false;
 }
 
 function helpOutsideClick(e){
