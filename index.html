@@ -546,7 +546,7 @@ header{background:var(--panel);border-bottom:1px solid var(--border);padding:0 1
 
       <div style="padding:10px 14px 12px;border-top:1px solid var(--border);margin-top:auto;">
         <div style="font-family:monospace;font-size:9px;color:var(--text3);letter-spacing:.5px;">
-          <span style="color:var(--text2);font-weight:700;">WatchTower</span> &nbsp;v2.35
+          <span style="color:var(--text2);font-weight:700;">WatchTower</span> &nbsp;v2.39
           <span style="float:right;opacity:0.6;">John Willie Gee</span>
         </div>
       </div>
@@ -3174,6 +3174,7 @@ function showWarnType(type) {
   var tab = document.getElementById('wt-' + type);
   if (tab) tab.classList.add('on');
   renderWarningsPanel();
+  if (warningsVisible) renderWarningsMap();
 }
 
 function renderWarningsPanel() {
@@ -4575,12 +4576,15 @@ function computeRisks() {
           });
         }
 
-        // Fallback: state match + rough 300km proximity (catches warnings with no district name)
+        // Fallback: state match + rough proximity (catches warnings with no district name)
         if (!inDistrict) {
           var stateMatch = !w.state || w.state.toUpperCase() === (site.state||'').toUpperCase();
           var distToWarn = haversineKm(site.lat, site.lon, w.coords[0], w.coords[1]);
           if (!stateMatch && distToWarn > 400) return;
-          if (distToWarn > 300) return;
+          // Storm/severe use the user-configured storm distance slider
+          var wtype0 = w.type;
+          var proxLimit = (wtype0 === 'thunderstorm' || wtype0 === 'severe_weather') ? S.stormDist : 300;
+          if (distToWarn > proxLimit) return;
           inDistrict = true; // fallback matched
         }
 
@@ -4606,7 +4610,6 @@ function computeRisks() {
         }
 
         if (lvl === RISK_LEVEL.NONE) return;
-        if (!inDistrict && distToWarn > 300) return;
 
         if (lvl > topLevel) topLevel = lvl;
         var isStormAM = isAM && wtype === 'thunderstorm'; // only thunderstorm triggers MF alert popup
@@ -5163,8 +5166,8 @@ function toggleSpToggle(key, el) {
   var on = !el.classList.contains('on');
   el.classList.toggle('on', on);
   if (key === 'labels') { S.labels = on; applyLabelsToggle(); }
-  else if (key === 'fdr') { S.fdrEnabled = on; riskFDREnabled = on; document.getElementById('ropt-fdr').classList.toggle('on', on); computeRisks(); }
-  else if (key === 'storm') { S.stormEnabled = on; riskStormMFEnabled = on; document.getElementById('ropt-stormMF').classList.toggle('on', on); computeRisks(); }
+  else if (key === 'fdr') { S.fdrEnabled = on; riskFDREnabled = on; var _fc=document.getElementById('ropt-fdr'); if(_fc) _fc.classList.toggle('on', on); computeRisks(); }
+  else if (key === 'storm') { S.stormEnabled = on; riskStormMFEnabled = on; var _sc=document.getElementById('ropt-stormMF'); if(_sc) _sc.classList.toggle('on', on); computeRisks(); }
   markCustomIfNeeded();
   saveSettings();
 }
