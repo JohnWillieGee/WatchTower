@@ -4805,7 +4805,14 @@ function showNextRiskAlert() {
   var col = RISK_COLOR[item.level];
 
   var isPulse = (item.level >= RISK_LEVEL.DIRECT) || item.isFireStorm;
-  var typeIcon = item.isFireStorm ? '\u26C8 STORM WARNING \u2014 AM/MF SITE' : '\uD83D\uDD25 FIRE THREAT';
+  var _reasonText = (item.reasons[0] && item.reasons[0].detail) ? item.reasons[0].detail.toLowerCase() : '';
+  var typeIcon = item.isFireStorm ? '\u26C8 STORM WARNING \u2014 AM/MF SITE'
+    : _reasonText.includes('flood')   ? '\uD83D\uDCA7 FLOOD THREAT'
+    : _reasonText.includes('storm')   ? '\u26A1 STORM THREAT'
+    : _reasonText.includes('tsunami') ? '\uD83C\uDF0A TSUNAMI THREAT'
+    : _reasonText.includes('earth')   ? '\uD83C\uDF0D EARTHQUAKE THREAT'
+    : _reasonText.includes('chemical')||_reasonText.includes('hazmat') ? '\u2623 HAZMAT THREAT'
+    : '\uD83D\uDD25 FIRE THREAT';
 
   var reasonHtml = item.reasons.slice(0,2).map(function(r) {
     return '<div style="font-size:10px;color:var(--text2);padding:2px 0;border-bottom:1px solid var(--border)">'+
