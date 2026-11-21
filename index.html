@@ -236,6 +236,10 @@ header{background:var(--panel);border-bottom:1px solid var(--border);padding:0 1
 .radar-tick:hover{background:var(--accent2);}
 #radar-time-label{font-family:monospace;font-size:10px;color:var(--accent);min-width:40px;text-align:center;}
 #radar-age-label{font-size:9px;color:var(--text3);}
+#radar-legend{display:inline-flex;align-items:center;gap:5px;}
+.rl{display:inline-flex;align-items:center;gap:2px;font-size:9px;color:var(--text3);}
+.rl i{width:9px;height:9px;border-radius:2px;display:inline-block;}
+.rl-u{font-size:9px;color:var(--text3);}
 /* bom radar */
 #bom-radar-controls{position:absolute;bottom:70px;left:50%;transform:translateX(-50%);z-index:1000;background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:6px 10px;display:flex;align-items:center;gap:8px;box-shadow:0 2px 12px var(--shadow);font-size:10px;color:var(--text2);white-space:nowrap;}
 #bom-radar-controls.hidden{display:none;}
@@ -266,7 +270,7 @@ body.wall-mode #radarcov-panel{display:none !important;}
 .rdr-opacity input[type=range]{width:70px;height:4px;accent-color:#0099ff;cursor:pointer;}
 .rdr-opacity span:last-child{font-family:monospace;color:#0099ff;min-width:28px;text-align:right;}
 #bom-radar-controls,#radar-controls{max-width:calc(100vw - 12px);}
-@media (max-width:700px){#bom-radar-product-label,#bom-radar-age-label,#radar-age-label,.rdr-opacity > span:first-child{display:none;}
+@media (max-width:700px){#radar-legend,#bom-radar-legend,#bom-radar-age-label,#radar-age-label,.rdr-opacity > span:first-child{display:none;}
 #bom-radar-controls,#radar-controls{flex-wrap:wrap;justify-content:center;white-space:normal;width:max-content;}}
 #bom-radar-play-btn{background:#0077cc;border:none;color:#fff;border-radius:4px;width:24px;height:24px;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
 #bom-radar-product-label{font-size:9px;color:#0099ff;font-weight:700;min-width:60px;}
@@ -277,6 +281,12 @@ body.wall-mode #radarcov-panel{display:none !important;}
 #bom-radar-time-label{font-family:monospace;font-size:10px;color:#0099ff;min-width:40px;text-align:center;}
 #bom-radar-age-label{font-size:9px;color:var(--text3);}
 .map-btn.bom-radar-on{background:#0077cc;border-color:#0077cc;color:#fff;font-weight:500;}
+.wt-bomtile,.wt-bomtile canvas{image-rendering:pixelated;}   /* past BOM's finest zoom the tiles are enlarged: keep the pixels crisp */
+#bom-layer-select{background:var(--panel);color:var(--text2);border:1px solid var(--border);border-radius:4px;font-size:10px;padding:2px 4px;max-width:190px;}
+#bom-radar-legend{font-size:9px;color:var(--text3);white-space:nowrap;}
+.bom-lg-sw{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align:middle;margin-right:2px;}
+.bom-lg-bar{display:inline-block;width:70px;height:8px;border-radius:2px;vertical-align:middle;}
+.bom-lg-blk{display:inline-block;width:8px;height:9px;vertical-align:middle;}
 /* lightning */
 #lightning-panel{position:absolute;top:50px;right:50px;z-index:1002;width:480px;height:380px;border-radius:var(--radius);overflow:hidden;border:1px solid #9775fa;box-shadow:0 4px 20px rgba(0,0,0,0.7);display:none;flex-direction:column;}
 #lightning-panel.visible{display:flex;}
@@ -870,7 +880,7 @@ body.wall-mode .risk-tooltip{display:none !important;}
 
       <div style="padding:10px 14px 12px;border-top:1px solid var(--border);margin-top:auto;">
         <div style="font-family:monospace;font-size:9px;color:var(--text3);letter-spacing:.5px;">
-          <span style="color:var(--text2);font-weight:700;">WatchTower</span> &nbsp;v4.1
+          <span style="color:var(--text2);font-weight:700;">WatchTower</span> &nbsp;v5.0
           <span style="float:right;opacity:0.6;">John Willie Gee</span>
         </div>
       </div>
@@ -948,8 +958,7 @@ body.wall-mode .risk-tooltip{display:none !important;}
     <div id="xl-panel" class="hidden"></div>
     <div id="radarcov-panel" class="hidden">
       <div class="rc-title">Radar coverage</div>
-      <div class="rc-row"><span>Range</span><div class="sp-theme-seg"><button class="sp-th-opt" id="rc-r64" onclick="radarCovSet('range',64)">64 km</button><button class="sp-th-opt" id="rc-r128" onclick="radarCovSet('range',128)">128</button><button class="sp-th-opt" id="rc-r256" onclick="radarCovSet('range',256)">256</button><button class="sp-th-opt" id="rc-r512" onclick="radarCovSet('range',512)">512</button></div></div>
-      <div class="rc-row"><span>Radars</span><div class="sp-theme-seg"><button class="sp-th-opt" id="rc-s-wt" onclick="radarCovSet('src','wt')">WatchTower</button><button class="sp-th-opt" id="rc-s-all" onclick="radarCovSet('src','all')">+ BOM-only</button></div></div>
+      <div class="rc-row"><span>Range</span><div class="sp-theme-seg"><button class="sp-th-opt" id="rc-r64" onclick="radarCovSet('range',64)">64 km</button><button class="sp-th-opt" id="rc-r128" onclick="radarCovSet('range',128)">128</button><button class="sp-th-opt" id="rc-r200" onclick="radarCovSet('range',200)">200</button><button class="sp-th-opt" id="rc-r256" onclick="radarCovSet('range',256)">256</button><button class="sp-th-opt" id="rc-r512" onclick="radarCovSet('range',512)">512</button></div></div>
       <div class="rc-row"><span>Highlight</span><div class="sp-theme-seg"><button class="sp-th-opt" id="rc-h-gaps" onclick="radarCovSet('hi','gaps')">No radar</button><button class="sp-th-opt" id="rc-h-single" onclick="radarCovSet('hi','single')">One radar</button><button class="sp-th-opt" id="rc-h-off" onclick="radarCovSet('hi','off')">Off</button></div></div>
       <div id="rc-stats">Loading radar list...</div>
       <div id="rc-note"></div>
@@ -958,17 +967,19 @@ body.wall-mode .risk-tooltip{display:none !important;}
     </div>
     <div id="bom-radar-controls" class="hidden">
       <button id="bom-radar-play-btn" onclick="toggleBomRadarPlay()" title="Play/Pause">&#9654;</button>
-      <span id="bom-radar-product-label">BOM</span>
+      <select id="bom-layer-select" onchange="setBomLayer(this.value)" title="BOM layer: radar or forecast"></select>
       <div id="bom-radar-timeline"></div>
       <span id="bom-radar-time-label">--:--</span>
       <span id="bom-radar-age-label">BOM Radar</span>
+      <span id="bom-radar-legend"></span>
       <label class="rdr-opacity" title="Radar opacity"><span>Opacity</span><input type="range" id="bom-radar-opacity" min="10" max="100" step="5" value="75" oninput="setBomRadarOpacity(this.value)" aria-label="BOM radar opacity"><span id="bom-radar-opacity-val">75%</span></label>
     </div>
     <div id="radar-controls" class="hidden">
       <button id="radar-play-btn" onclick="toggleRadarPlay()" title="Play/Pause">&#9654;</button>
       <div id="radar-timeline"></div>
       <span id="radar-time-label">--:--</span>
-      <span id="radar-age-label">BOM Radar</span>
+      <span id="radar-age-label">RainViewer</span>
+      <span id="radar-legend" title="Radar reflectivity in dBZ (RainViewer Universal Blue colours). Higher dBZ means heavier rain; 35 dBZ and above is heavy, 55 and above is extreme and can include hail."><span class="rl"><i style="background:#ded097"></i>&lt;15</span><span class="rl"><i style="background:#88ddee"></i>15</span><span class="rl"><i style="background:#0077aa"></i>25</span><span class="rl"><i style="background:#ffee00"></i>35</span><span class="rl"><i style="background:#ffaa00"></i>40</span><span class="rl"><i style="background:#ff4400"></i>45</span><span class="rl"><i style="background:#c10000"></i>50</span><span class="rl"><i style="background:#ffaaff"></i>55</span><span class="rl-u">dBZ</span></span>
       <label class="rdr-opacity" title="Radar opacity"><span>Opacity</span><input type="range" id="radar-opacity" min="10" max="100" step="5" value="70" oninput="setRadarOpacity(this.value)" aria-label="Radar opacity"><span id="radar-opacity-val">70%</span></label>
     </div>
     <div id="lightning-panel">
@@ -1560,17 +1571,77 @@ function normaliseSite(s) {
   return s;
 }
 // ---- Radar coverage layer ---------------------------------------------------------------------------------------------
-// Where BOM's radars can see rain, and which of your sites sit outside that. Radar positions come from radar_meta.json (each
-// radar's image extent is stored there), so there is no extra data feed. Rings show range in principle only: hills blocking the
-// beam and the beam rising with distance are not modelled.
-var RADARCOV_STALE_MIN = 25;     // a radar whose newest frame is this far behind the freshest radar is treated as not reporting
-// Real BOM radars that WatchTower's radar layer does not download (positions from BOM's site database). Shown dashed.
-var RADARCOV_EXTRA = [
-  {id:'IDR22', name:'Mackay',    lat:-21.117,  lon:149.217}, {id:'IDR24', name:'Bowen',     lat:-19.886, lon:148.075},
-  {id:'IDR23', name:'Gladstone', lat:-23.855,  lon:151.263}, {id:'IDR29', name:'Learmonth', lat:-22.103, lon:113.999},
-  {id:'IDR05', name:'Carnarvon', lat:-24.8878, lon:113.669}
+// Where BOM's radars can see rain, and which of your sites sit outside that. Radar positions are BOM's own (its radar_sites service, 63 radars,
+// read on 21 Nov 2026), so the list does not depend on which radars the fetcher downloads. Rings show range in principle only: hills blocking the
+// beam and the beam rising with distance are not modelled (BOM's own coverage shading is for rain about 3 km up, with useful range about 200 km).
+var RADARCOV_STALE_MIN = 25;     // a radar the fetcher downloads whose newest frame is this far behind the freshest radar is treated as not reporting
+// ty: D = Doppler, W = standard weather watch radar
+var RADARCOV_BOM = [
+  {id:2, name:'Melbourne (Laverton)', lat:-37.85524, lon:144.75545, st:'VIC', ty:'D'},
+  {id:3, name:'Wollongong (Appin)', lat:-34.26238, lon:150.87515, st:'NSW', ty:'D'},
+  {id:4, name:'Newcastle', lat:-32.7298, lon:152.02537, st:'NSW', ty:'D'},
+  {id:6, name:'Geraldton', lat:-28.80467, lon:114.69735, st:'WA', ty:'D'},
+  {id:7, name:'Wyndham', lat:-15.4517, lon:128.12086, st:'WA', ty:'W'},
+  {id:8, name:'Gympie (Mount Kanigan)', lat:-25.95733, lon:152.57692, st:'QLD', ty:'D'},
+  {id:14, name:'Mount Gambier', lat:-37.74771, lon:140.77463, st:'SA', ty:'W'},
+  {id:16, name:'Port Hedland', lat:-20.37184, lon:118.63166, st:'WA', ty:'W'},
+  {id:17, name:'Broome', lat:-17.94826, lon:122.23532, st:'WA', ty:'D'},
+  {id:19, name:'Cairns', lat:-16.81817, lon:145.66303, st:'QLD', ty:'D'},
+  {id:22, name:'Mackay', lat:-21.11725, lon:149.21728, st:'QLD', ty:'D'},
+  {id:23, name:'Gladstone', lat:-23.85507, lon:151.26252, st:'QLD', ty:'W'},
+  {id:24, name:'Bowen', lat:-19.88577, lon:148.07568, st:'QLD', ty:'W'},
+  {id:25, name:'Alice Springs', lat:-23.79505, lon:133.88894, st:'NT', ty:'W'},
+  {id:27, name:'Woomera', lat:-31.15581, lon:136.8044, st:'SA', ty:'W'},
+  {id:28, name:'Grafton', lat:-29.62066, lon:152.96333, st:'NSW', ty:'W'},
+  {id:29, name:'Learmonth', lat:-22.10319, lon:113.99967, st:'WA', ty:'W'},
+  {id:31, name:'Albany', lat:-34.94176, lon:117.81635, st:'WA', ty:'D'},
+  {id:32, name:'Esperance', lat:-33.8302, lon:121.89173, st:'WA', ty:'D'},
+  {id:33, name:'Ceduna', lat:-32.12984, lon:133.69636, st:'SA', ty:'D'},
+  {id:36, name:'Mornington Island (Gulf of Carpentaria)', lat:-16.66409, lon:139.18124, st:'QLD', ty:'W'},
+  {id:38, name:'Newdegate', lat:-33.09695, lon:119.0088, st:'WA', ty:'D'},
+  {id:39, name:'Halls Creek', lat:-18.22894, lon:127.66283, st:'WA', ty:'W'},
+  {id:40, name:'Canberra (Captains Flat)', lat:-35.6614, lon:149.51225, st:'NSW', ty:'D'},
+  {id:41, name:'Willis Island', lat:-16.28738, lon:149.96463, st:'QLD', ty:'D'},
+  {id:42, name:'Katherine (Tindal)', lat:-14.51091, lon:132.44703, st:'NT', ty:'W'},
+  {id:44, name:'Giles', lat:-25.03323, lon:128.30174, st:'WA', ty:'W'},
+  {id:46, name:'Adelaide (Sellicks Hill)', lat:-35.32955, lon:138.50248, st:'SA', ty:'W'},
+  {id:48, name:'Kalgoorlie', lat:-30.78422, lon:121.45483, st:'WA', ty:'D'},
+  {id:49, name:'Yarrawonga', lat:-36.02962, lon:146.02275, st:'VIC', ty:'D'},
+  {id:50, name:'Brisbane (Marburg)', lat:-27.60634, lon:152.54004, st:'QLD', ty:'D'},
+  {id:52, name:'NW Tasmania (West Takone)', lat:-41.17916, lon:145.58, st:'TAS', ty:'D'},
+  {id:53, name:'Moree', lat:-29.49029, lon:149.84619, st:'NSW', ty:'W'},
+  {id:55, name:'Wagga Wagga', lat:-35.15815, lon:147.45631, st:'NSW', ty:'W'},
+  {id:56, name:'Longreach', lat:-23.43979, lon:144.28226, st:'QLD', ty:'W'},
+  {id:58, name:'South Doodlakine', lat:-31.77778, lon:117.95279, st:'WA', ty:'D'},
+  {id:63, name:'Darwin (Berrimah)', lat:-12.45591, lon:130.92656, st:'NT', ty:'D'},
+  {id:64, name:'Adelaide (Buckland Park)', lat:-34.61701, lon:138.46877, st:'SA', ty:'D'},
+  {id:66, name:'Brisbane (Mt Stapylton)', lat:-27.71773, lon:153.24, st:'QLD', ty:'D'},
+  {id:67, name:'Warrego', lat:-26.44018, lon:147.34913, st:'QLD', ty:'W'},
+  {id:68, name:'Bairnsdale', lat:-37.88754, lon:147.5755, st:'VIC', ty:'D'},
+  {id:69, name:'Namoi (Blackjack Mountain)', lat:-31.02422, lon:150.19197, st:'NSW', ty:'D'},
+  {id:70, name:'Perth (Serpentine)', lat:-32.39176, lon:115.86696, st:'WA', ty:'D'},
+  {id:71, name:'Sydney (Terrey Hills)', lat:-33.70078, lon:151.20948, st:'NSW', ty:'D'},
+  {id:72, name:'Emerald', lat:-23.54959, lon:148.23919, st:'QLD', ty:'D'},
+  {id:74, name:'Greenvale', lat:-18.99765, lon:144.99586, st:'QLD', ty:'D'},
+  {id:75, name:'Mount Isa', lat:-20.71121, lon:139.55529, st:'QLD', ty:'D'},
+  {id:76, name:'Hobart (Mt Koonya)', lat:-43.1126, lon:147.80522, st:'TAS', ty:'D'},
+  {id:77, name:'Warruwi', lat:-11.64848, lon:133.37997, st:'NT', ty:'D'},
+  {id:78, name:'Weipa', lat:-12.66644, lon:141.92461, st:'QLD', ty:'D'},
+  {id:79, name:'Watheroo', lat:-30.36021, lon:116.28972, st:'WA', ty:'D'},
+  {id:93, name:'Brewarrina', lat:-29.97079, lon:146.81358, st:'NSW', ty:'D'},
+  {id:94, name:'Hillston', lat:-33.55221, lon:145.52863, st:'NSW', ty:'D'},
+  {id:95, name:'Rainbow (Wimmera)', lat:-35.99756, lon:142.01332, st:'VIC', ty:'D'},
+  {id:96, name:'Yeoval', lat:-32.74447, lon:148.70809, st:'NSW', ty:'D'},
+  {id:97, name:'Mildura', lat:-34.28712, lon:141.59821, st:'VIC', ty:'D'},
+  {id:98, name:'Taroom', lat:-25.69617, lon:149.89817, st:'QLD', ty:'D'},
+  {id:106, name:'Townsville', lat:-19.41978, lon:146.55096, st:'QLD', ty:'D'},
+  {id:107, name:'Richmond', lat:-20.75177, lon:143.14144, st:'QLD', ty:'D'},
+  {id:108, name:'Toowoomba', lat:-27.27406, lon:151.993, st:'QLD', ty:'D'},
+  {id:111, name:'Karratha', lat:-20.99244, lon:116.8758, st:'WA', ty:'D'},
+  {id:112, name:'Gove', lat:-12.26897, lon:136.82044, st:'NT', ty:'D'},
+  {id:114, name:'Carnarvon', lat:-24.88827, lon:113.66941, st:'WA', ty:'D'}
 ];
-var radarCov = {visible:false, range:256, src:'wt', hi:'gaps', radars:[], generated:'', layer:null, hiLayer:null, loading:false, error:'', res:null, list:false};
+var radarCov = {visible:false, range:256, hi:'gaps', radars:[], generated:'', layer:null, hiLayer:null, loading:false, error:'', res:null, list:false};
 
 function radarCovKm(a, b) {
   var p = Math.PI / 180, dl = (b[0] - a[0]) * p, dn = (b[1] - a[1]) * p;
@@ -1578,17 +1649,20 @@ function radarCovKm(a, b) {
   return 12742 * Math.asin(Math.sqrt(h));
 }
 function radarCovBuild(meta) {
-  var P = (meta && meta.products) || {}, rows = [], newest = 0;
-  Object.keys(P).forEach(function(id) {
+  var P = (meta && meta.products) || {}, lastById = {}, newest = 0;
+  Object.keys(P).forEach(function(id) {                          // radar_meta.json products are named like IDR711 (radar 71, product 1)
     if (id === 'composite') return;
-    var p = P[id]; if (!p || !p.bounds || p.bounds.length < 4) return;
-    var s = p.bounds[0], w = p.bounds[1], n = p.bounds[2], e = p.bounds[3], last = 0;
+    var p = P[id]; if (!p) return;
+    var rid = parseInt(String(id).replace(/^IDR/, '').slice(0, -1), 10), last = 0;
     (p.frames || []).forEach(function(f) { var t = Date.parse(f.utc || ''); if (t > last) last = t; });
-    if (last > newest) newest = last;
-    rows.push({id:id, name:p.name || id, lat:(s + n) / 2, lon:(w + e) / 2, imageKm:Math.round((n - s) / 2 * 111.195), last:last, kind:'wt'});
+    lastById[rid] = last; if (last > newest) newest = last;
   });
-  rows.forEach(function(r) { r.lagMin = r.last ? Math.round((newest - r.last) / 60000) : null; r.stale = r.last === 0 || (newest - r.last) / 60000 > RADARCOV_STALE_MIN; });
-  RADARCOV_EXTRA.forEach(function(x) { rows.push({id:x.id, name:x.name, lat:x.lat, lon:x.lon, imageKm:0, last:0, lagMin:null, stale:false, kind:'extra'}); });
+  var rows = RADARCOV_BOM.map(function(b) {
+    var known = Object.prototype.hasOwnProperty.call(lastById, b.id), last = known ? lastById[b.id] : 0;
+    return {id:'IDR' + b.id, name:b.name, state:b.st, type:b.ty, lat:b.lat, lon:b.lon, last:last, known:known,
+            lagMin:(known && last) ? Math.round((newest - last) / 60000) : null,
+            stale:known && (last === 0 || (newest - last) / 60000 > RADARCOV_STALE_MIN)};
+  });
   radarCov.radars = rows; radarCov.generated = (meta && meta.generated_utc) || '';
 }
 function radarCovLoad(done) {
@@ -1600,15 +1674,15 @@ function radarCovLoad(done) {
     .catch(function(e) { radarCov.loading = false; radarCov.error = e.message; if (done) done(); });
 }
 function radarCovEnsure() { if (!radarCov.radars.length && !radarCov.loading) radarCovLoad(function() { if (radarCov.visible) radarCovRefresh(); }); }
-function radarCovActive() {   // radars that count towards coverage: those with current data, and (if chosen) the BOM-only ones
-  return radarCov.radars.filter(function(r) { return !r.stale && (r.kind === 'wt' || radarCov.src === 'all'); });
+function radarCovActive() {   // every BOM radar counts, except one the fetcher watches that has stopped sending frames
+  return radarCov.radars.filter(function(r) { return !r.stale; });
 }
 function radarCovInfo(s, rng) {
   var act = radarCovActive(), within = 0, best = null;
   act.forEach(function(r) {
     var d = radarCovKm([s.lat, s.lon], [r.lat, r.lon]);
     if (d <= rng) within++;
-    if (!best || d < best.km) best = {name:r.name, km:d, extra:r.kind === 'extra'};
+    if (!best || d < best.km) best = {name:r.name, km:d};
   });
   return {n:within, nearest:best};
 }
@@ -1639,10 +1713,10 @@ function radarCovDraw() {
   radarCov.layer.clearLayers(); radarCov.hiLayer.clearLayers();
   if (!radarCov.visible) { try { map.removeLayer(radarCov.layer); map.removeLayer(radarCov.hiLayer); } catch (e) {} return; }
   radarCov.radars.forEach(function(r) {
-    if (r.kind === 'extra' && radarCov.src !== 'all') return;
-    var col = r.stale ? '#ff6b6b' : (r.kind === 'extra' ? '#b197fc' : '#4dabf7'), dash = (r.kind === 'extra' || r.stale) ? '6 6' : null;
+    var col = r.stale ? '#ff6b6b' : '#4dabf7', dash = r.stale ? '6 6' : null;
     L.circle([r.lat, r.lon], {radius:radarCov.range * 1000, color:col, weight:1.2, fillColor:col, fillOpacity:r.stale ? 0 : 0.05, dashArray:dash, interactive:false}).addTo(radarCov.layer);
-    var tip = '<b>' + esc_(r.name) + '</b>' + (r.kind === 'extra' ? '<br>BOM radar not in the WatchTower radar layer' : '') + (r.stale ? '<br>No recent data (' + (r.lagMin == null ? 'no frames' : r.lagMin + ' min behind') + ')' : '');
+    var tip = '<b>' + esc_(r.name) + '</b><br>' + esc_(r.state) + ', ' + (r.type === 'D' ? 'Doppler' : 'standard weather watch') + (r.known ? '' : '<br>Not monitored for outages') +
+              (r.stale ? '<br>No recent data (' + (r.lagMin == null ? 'no frames' : r.lagMin + ' min behind') + ')' : '');
     L.circleMarker([r.lat, r.lon], {radius:4, color:col, weight:2, fillColor:'#0d1117', fillOpacity:1}).bindTooltip(tip, {direction:'top'}).addTo(radarCov.layer);
   });
   var list = radarCov.hi === 'gaps' ? radarCov.res.gaps : radarCov.hi === 'single' ? radarCov.res.single : [];
@@ -1655,17 +1729,15 @@ function radarCovDraw() {
 }
 function radarCovPanel() {
   var el = document.getElementById('radarcov-panel'); if (!el) return;
-  ['64', '128', '256', '512'].forEach(function(k) { var b = document.getElementById('rc-r' + k); if (b) b.classList.toggle('on', radarCov.range === +k); });
-  [['wt', 'rc-s-wt'], ['all', 'rc-s-all']].forEach(function(p) { var b = document.getElementById(p[1]); if (b) b.classList.toggle('on', radarCov.src === p[0]); });
+  ['64', '128', '200', '256', '512'].forEach(function(k) { var b = document.getElementById('rc-r' + k); if (b) b.classList.toggle('on', radarCov.range === +k); });
   [['gaps', 'rc-h-gaps'], ['single', 'rc-h-single'], ['off', 'rc-h-off']].forEach(function(p) { var b = document.getElementById(p[1]); if (b) b.classList.toggle('on', radarCov.hi === p[0]); });
   var st = document.getElementById('rc-stats'), note = document.getElementById('rc-note'), list = document.getElementById('rc-list');
   if (!radarCov.res) { st.textContent = radarCov.error ? 'Radar list unavailable (' + radarCov.error + ')' : 'Loading radar list...'; note.textContent = ''; list.innerHTML = ''; return; }
   var r = radarCov.res, pc = function(n) { var v = r.total ? n * 100 / r.total : 0; return (n > 0 && v < 1) ? '<1' : Math.round(v); }, act = radarCovActive().length;
   st.innerHTML = '<b>' + r.gaps.length + '</b> of ' + r.total + ' sites (' + pc(r.gaps.length) + '%) have no radar within ' + radarCov.range + ' km<br>' +
                  '<b>' + r.single.length + '</b> have only one radar in range<br>' + act + ' radars counted' + (r.stale.length ? ', <span style="color:#ff6b6b">' + r.stale.length + ' not reporting: ' + esc_(r.stale.map(function(x) { return x.name; }).join(', ')) + '</span>' : '');
-  var extras = radarCov.radars.filter(function(x) { return x.kind === 'extra'; }).length;
-  note.innerHTML = radarCov.src === 'all' ? 'Dashed purple rings are BOM radars that the WatchTower radar layer does not show, so rain there will not appear on the radar images.'
-                                          : 'Counting only the radars WatchTower displays. ' + extras + ' more BOM radars exist (switch on "+ BOM-only" to see their effect).';
+  var mon = radarCov.radars.filter(function(x) { return x.known; }).length;
+  note.innerHTML = 'All ' + radarCov.radars.length + ' BOM radars are counted, at the positions BOM publishes. ' + mon + ' are watched for outages; the other ' + (radarCov.radars.length - mon) + ' are assumed to be reporting.';
   var items = radarCov.hi === 'single' ? r.single : r.gaps;
   list.innerHTML = radarCov.list ? items.map(function(g, i) {
     return '<div class="rc-item" onclick="radarCovFly(' + i + ')"><span>' + esc_(g.site.name.replace(/^\d+\s+/, '')) + ' <i>' + esc_(g.site.state || '') + '</i></span><span>' + (g.nearest ? esc_(g.nearest.name) + ' ' + Math.round(g.nearest.km) + ' km' : '') + '</span></div>';
@@ -2378,7 +2450,9 @@ var radarLoaded = false;
 var radarLastLoaded = 0;   // timestamp of last successful frame load
 var RADAR_HOST = '';         // set from API response
 var RADAR_OPACITY = (function(){ var v = parseFloat(localStorage.getItem('wt_radar_opacity')); return (v >= 0.1 && v <= 1) ? v : 0.7; })();   // set by the slider, remembered
-var RADAR_COLOR = 6;         // 6 = original reflectivity dBZ colour scheme
+var RADAR_COLOR = 2;         // 2 = Universal Blue: the only scheme RainViewer still serves (the rest were retired 1 Jan 2026; asking for 6 was silently answered with 2)
+var RADAR_MAX_NATIVE = 8;    // map zoom 8 = tile zoom 7 at 512 px (zoomOffset -1), RainViewer's finest; above this the tiles are stretched
+var radarLayerByPath = {};   // host+path -> tile layer. Kept between refreshes so frames already on the map are not requested again
 var RADAR_SMOOTH = 0;        // 0 = sharp (meteorologists prefer this)
 var RADAR_SNOW = 0;
 
@@ -2388,21 +2462,110 @@ function toggleRadarLayer(){
   if(radarVisible){
     btn.classList.add('on');
     document.getElementById('radar-controls').classList.remove('hidden');
-    var stale = (Date.now() - radarLastLoaded) > 5 * 60 * 1000;
-    if(!radarLoaded || stale){
-      radarLayers.forEach(function(l){ if(map.hasLayer(l)) map.removeLayer(l); });
-      radarLayers = []; radarFramesReady = []; radarLoaded = false;
-      loadRadarFrames();
+    radarLoaded = false;
+    var fresh = (Date.now() - radarLastLoaded) <= 5 * 60 * 1000;
+    if(radarFramesAll.length && fresh){
+      radarSelectActive(radarFramesAll);   // frames already known: put them back on the map, no new frame list needed
     } else {
-      showRadarFrame(radarCurrentIdx);
+      loadRadarFrames();
     }
   } else {
     btn.classList.remove('on');
     document.getElementById('radar-controls').classList.add('hidden');
-    // Set all layers to invisible rather than removing \u2014 avoids reload next time
-    radarLayers.forEach(function(l){ l.setOpacity(0); });
     stopRadarPlay();
+    // Take every frame off the map while the layer is hidden, so panning and zooming make no radar requests.
+    Object.keys(radarLayerByPath).forEach(function(k){
+      var l = radarLayerByPath[k];
+      if(map.hasLayer(l)) map.removeLayer(l);
+    });
   }
+}
+
+var radarFramesAll = [];       // every frame RainViewer lists; radarFrames / radarLayers hold the ones currently on the map
+var radarZoomHooked = false;
+var radarRebalanceTimer = null;
+var RADAR_TILE_BUDGET = 70;     // tile requests allowed for one full set of frames. RainViewer limits an address to 100 a minute, and panning and the BOM layer share it
+
+function radarMakeLayer(f){
+  var url = RADAR_HOST + f.path + '/512/{z}/{x}/{y}/' + RADAR_COLOR + '/' + RADAR_SMOOTH + '_' + RADAR_SNOW + '.png';
+  var layer = L.tileLayer(url, {
+    opacity: 0,
+    zIndex: 300,
+    tileSize: 512,
+    zoomOffset: -1,
+    maxNativeZoom: RADAR_MAX_NATIVE,
+    attribution: 'Radar &copy; <a href="https://www.bom.gov.au" target="_blank">BOM</a> via <a href="https://www.rainviewer.com/" target="_blank">RainViewer</a>'
+  });
+  layer._wtReady = false;
+  layer.on('load', function(){
+    if(!layer._wtReady){ layer._wtReady = true; radarCheckReady(); }
+  });
+  return layer;   // added to the map by radarSelectActive
+}
+
+// How many frames to keep on the map at the current zoom. Up to map zoom 6 every frame is used, as before. Above that each zoom level
+// needs a fresh set of tiles for every frame, so the number of frames is cut to stay inside the tile budget.
+function radarFrameLimit(total){
+  var z = map.getZoom();
+  if(z <= 6) return total;
+  var sz = map.getSize(), ts = 512 * Math.pow(2, Math.max(0, z - RADAR_MAX_NATIVE));
+  var n = (Math.ceil(sz.x / ts) + 1) * (Math.ceil(sz.y / ts) + 1);   // tiles per frame for this window
+  return Math.max(2, Math.min(total, Math.floor(RADAR_TILE_BUDGET / n)));
+}
+
+// Put the newest frames on the map (as many as the limit allows) and take the rest off.
+function radarSelectActive(all){
+  radarFramesAll = all;
+  if(!radarZoomHooked){
+    radarZoomHooked = true;
+    map.on('zoomend resize', function(){
+      clearTimeout(radarRebalanceTimer);
+      radarRebalanceTimer = setTimeout(radarRebalance, 700);
+    });
+  }
+  var active = all.slice(all.length - radarFrameLimit(all.length));
+  var keep = {};
+  active.forEach(function(f){ keep[RADAR_HOST + f.path] = true; });
+  Object.keys(radarLayerByPath).forEach(function(k){
+    var l = radarLayerByPath[k];
+    if(keep[k]){ if(!map.hasLayer(l)) l.addTo(map); }
+    else if(map.hasLayer(l)) map.removeLayer(l);
+  });
+  radarFrames = active;
+  radarLayers = active.map(function(f){ return radarLayerByPath[RADAR_HOST + f.path]; });
+  if(radarLoaded){            // re-selecting after a zoom: restart the animation on the frames now in use
+    buildRadarTimeline();
+    radarCurrentIdx = radarLayers.length - 1;
+    showRadarFrame(radarCurrentIdx);
+    startRadarPlay();
+  } else {
+    radarCheckReady();
+  }
+}
+
+function radarRebalance(){
+  if(!radarVisible || !radarFramesAll.length) return;
+  if(radarFrameLimit(radarFramesAll.length) === radarFrames.length) return;
+  stopRadarPlay();
+  radarSelectActive(radarFramesAll);
+}
+
+// Called whenever a frame finishes loading, and once after the frame list is set (reused frames never fire 'load' again).
+function radarCheckReady(){
+  var total = radarLayers.length;
+  if(!total || radarLoaded) return;
+  var n = 0;
+  radarLayers.forEach(function(l){ if(l._wtReady) n++; });
+  if(n < total){
+    document.getElementById('radar-age-label').textContent = 'Loading ' + Math.round(n / total * 100) + '%';
+    return;
+  }
+  radarLoaded = true;
+  radarLastLoaded = Date.now();
+  buildRadarTimeline();
+  radarCurrentIdx = total - 1;
+  showRadarFrame(radarCurrentIdx);
+  startRadarPlay();
 }
 
 function loadRadarFrames(){
@@ -2411,50 +2574,27 @@ function loadRadarFrames(){
     .then(function(r){ return r.json(); })
     .then(function(data){
       RADAR_HOST = data.host;
-      radarFrames = data.radar.past || [];
-      if(!radarFrames.length){
+      var frames = (data.radar && data.radar.past) || [];
+      if(!frames.length){
         document.getElementById('radar-age-label').textContent = 'No data';
         return;
       }
-
-      var totalFrames = radarFrames.length;
-      var loadedCount = 0;
-      radarFramesReady = new Array(totalFrames).fill(false);
-
-      // Add ALL layers to map at opacity 0 immediately to trigger tile pre-loading
-      radarLayers = radarFrames.map(function(f, i){
-        var url = RADAR_HOST + f.path + '/512/{z}/{x}/{y}/' + RADAR_COLOR + '/' + RADAR_SMOOTH + '_' + RADAR_SNOW + '.png';
-        var layer = L.tileLayer(url, {
-          opacity: 0,
-          zIndex: 300,
-          tileSize: 512,
-          zoomOffset: -1,
-          maxNativeZoom: 6,
-          attribution: 'Radar &copy; <a href="https://www.bom.gov.au" target="_blank">BOM</a> via RainViewer'
-        });
-
-        layer.on('load', (function(idx){
-          return function(){
-            if(!radarFramesReady[idx]){
-              radarFramesReady[idx] = true;
-              loadedCount++;
-              var pct = Math.round(loadedCount / totalFrames * 100);
-              document.getElementById('radar-age-label').textContent = 'Loading ' + pct + '%';
-              if(loadedCount === totalFrames && !radarLoaded){
-                radarLoaded = true;
-                radarLastLoaded = Date.now();
-                buildRadarTimeline();
-                radarCurrentIdx = totalFrames - 1;
-                showRadarFrame(radarCurrentIdx);
-                startRadarPlay();
-              }
-            }
-          };
-        })(i));
-
-        layer.addTo(map);
-        return layer;
+      // Forget frames that have aged out of RainViewer's 2 hour window; keep the rest.
+      var keepAll = {};
+      frames.forEach(function(f){ keepAll[RADAR_HOST + f.path] = true; });
+      Object.keys(radarLayerByPath).forEach(function(k){
+        if(!keepAll[k]){
+          var old = radarLayerByPath[k];
+          if(map.hasLayer(old)) map.removeLayer(old);
+          delete radarLayerByPath[k];
+        }
       });
+      frames.forEach(function(f){
+        var key = RADAR_HOST + f.path;
+        if(!radarLayerByPath[key]) radarLayerByPath[key] = radarMakeLayer(f);
+      });
+      radarLoaded = false;
+      radarSelectActive(frames);
     })
     .catch(function(e){
       document.getElementById('radar-age-label').textContent = 'Failed to load';
@@ -2489,9 +2629,9 @@ function showRadarFrame(idx){
     document.getElementById('radar-time-label').textContent = formatRadarTime(radarFrames[idx].time);
     if(idx === radarFrames.length - 1){
       var ageMin = Math.round((Date.now() / 1000 - radarFrames[idx].time) / 60);
-      document.getElementById('radar-age-label').textContent = 'BOM \u00B7 ' + ageMin + 'm ago';
+      var _al = document.getElementById('radar-age-label'); _al.textContent = 'RainViewer \u00B7 ' + ageMin + 'm ago'; _al.title = 'Time since this frame was generated. RainViewer does not publish when the underlying radar data was captured.';
     } else {
-      document.getElementById('radar-age-label').textContent = 'BOM Radar';
+      document.getElementById('radar-age-label').textContent = 'RainViewer';
     }
   }
 }
@@ -2535,17 +2675,14 @@ function toggleRadarPlay(){
 function refreshRadarLayers(){
   if(radarVisible && radarLoaded){
     stopRadarPlay();
-    radarLayers.forEach(function(l){ if(map.hasLayer(l)) map.removeLayer(l); });
-    radarLayers = [];
-    radarFramesReady = [];
-    radarLoaded = false;
+    radarLoaded = false;   // frames still current are reused; only new ones are requested
     loadRadarFrames();
   }
 }
 
 
-// \u2500\u2500 BOM RADAR LAYER (images served from the data repository) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
-// radar_meta.json structure:
+// \u2500\u2500 BOM RADAR LAYER (BOM's own map tiles, direct from api.bom.gov.au) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+// radar_meta.json is now used only by the Radar Coverage layer. Its structure:
 //   { "products": { "IDR00004": { "name":..., "bounds":[S,W,N,E], "frames":[{"file":"radar/IDRxxx_NN.png","utc":"ISO"},...] }, ... } }
 // Files are served from repo root: base URL + frame.file (which already includes "radar/" prefix)
 var BOM_RADAR_META_URL = DATA_BASE + 'radar/radar_meta.json';
@@ -2554,21 +2691,17 @@ var BOM_RADAR_OPACITY  = (function(){ var v = parseFloat(localStorage.getItem('w
 
 var bomRadarVisible    = false;
 var bomRadarLoaded     = false;
-var bomRadarLastLoaded = 0;   // timestamp of last successful frame load
-var bomRadarMeta       = null;   // full parsed radar_meta.json
-var bomRadarProducts   = [];     // ordered array of {id, name, bounds, frames} built from meta.products object
-var bomRadarLayers     = [];     // L.imageOverlay layers for current product, one per frame
-var bomRadarCurrentIdx = 0;      // current frame index
+var bomRadarLastLoaded = 0;   // when the frames last finished loading
+var bomRadarCurrentIdx = 0;      // current frame index (0 = oldest)
 var bomRadarPlaying    = false;
 var bomRadarPlayTimer  = null;
-var bomRadarProductIdx = 0;      // which product is currently displayed (0 = national mosaic)
 
 function setBomRadarOpacity(pct){
   BOM_RADAR_OPACITY = Math.max(0.1, Math.min(1, parseFloat(pct) / 100));
   try { localStorage.setItem('wt_bomradar_opacity', BOM_RADAR_OPACITY); } catch (e) {}
   var lab = document.getElementById('bom-radar-opacity-val'); if (lab) lab.textContent = Math.round(BOM_RADAR_OPACITY * 100) + '%';
-  var l = bomRadarLayers[bomRadarCurrentIdx];                       // only the frame on screen is visible; the others stay at 0
-  if (bomRadarVisible && l && map.hasLayer(l)) l.setOpacity(BOM_RADAR_OPACITY);
+  var cl = bomRadarCurrentLayer();                                  // only the frame on screen is visible; the others stay at 0
+  if (bomRadarVisible && cl && map.hasLayer(cl)) cl.setOpacity(BOM_RADAR_OPACITY);
 }
 function setRadarOpacity(pct){
   RADAR_OPACITY = Math.max(0.1, Math.min(1, parseFloat(pct) / 100));
@@ -2583,220 +2716,345 @@ function setRadarOpacity(pct){
     if (s) s.value = Math.round(p[1] * 100); if (v) v.textContent = Math.round(p[1] * 100) + '%';
   });
 })();
-function toggleBomRadarLayer(){
-  bomRadarVisible = !bomRadarVisible;
-  var btn = document.getElementById('btn-bom-radar');
-  if(bomRadarVisible){
-    btn.classList.add('bom-radar-on');
-    document.getElementById('bom-radar-controls').classList.remove('hidden');
-    var stale = (Date.now() - bomRadarLastLoaded) > 5 * 60 * 1000;
-    if(!bomRadarLoaded || stale){
-      stopBomRadarPlay();
-      bomRadarLoaded = false;
-      bomRadarLayers.forEach(function(l){ if(map.hasLayer(l)) map.removeLayer(l); });
-      bomRadarLayers = [];
-      loadBomRadarMeta();
-    } else {
-      showBomRadarFrame(bomRadarCurrentIdx);
-    }
-  } else {
-    btn.classList.remove('bom-radar-on');
-    document.getElementById('bom-radar-controls').classList.add('hidden');
-    bomRadarLayers.forEach(function(l){ if(map.hasLayer(l)) l.setOpacity(0); });
-    stopBomRadarPlay();
+/*BOMT-START*/
+// BOM's own map tiles, loaded straight from api.bom.gov.au by each viewer's browser. Nothing is stored in the repo.
+// The tile service is what bom.gov.au's own map uses. It is not a documented public API, so if the radar stops answering the page
+// switches itself to the RainViewer layer (see bomRadarFallback); if a forecast layer stops answering it goes back to the radar.
+var BOM_TILE_BASE = 'https://api.bom.gov.au/apikey/v1/mapping/timeseries/wmts/1.0.0';
+// BOM's two tile grids, from its capabilities document (21 Nov 2026). Per zoom: [top-left Y, matrix width, matrix height].
+// Both are offset from the usual web-mercator grid, so each BOM tile is redrawn onto Leaflet's grid (bomTSources / BomTileLayer).
+// probe = a tile (Sydney, zoom 7) used to ask "is this time published yet?".
+var BOM_TILE_GRIDS = {
+  main: {set:'GoogleMapsCompatible_BoM', X0:11584952.0, probe:[7, 10, 16], Z:{0:[34168990.685578,1,1],1:[14131482.342789,1,1],2:[4112728.171395,1,1],3:[4112728.171395,2,2],4:[1608039.628546,3,3],5:[355695.357122,6,5],6:[-270476.778591,11,9],7:[-583562.846447,22,17],8:[-740105.880375,43,33]}},
+  adfd: {set:'GoogleMapsCompatible_BoM_ADFD', X0:12462758.1832, probe:[7, 10, 13], Z:{0:[34449560.527478,1,1],1:[14412052.184689,1,1],2:[4393298.013295,1,1],3:[-616079.072403,1,1],4:[-616079.072403,2,2],5:[-616079.072403,4,4],6:[-616079.072403,8,8],7:[-616079.072403,16,16],8:[-772622.106331,31,31]}}
+};
+// Layers on the drop-down. kind: 5min = radar frames every 5 minutes; 3h = forecast every 3 hours; daily = one per day (anchorH = UTC hour of its time stamps).
+var BOM_LAYERS = [
+  {id: 'atm_surf_air_precip_reflectivity_dbz',                 label: 'Radar (reflectivity)',                grid: 'main', kind: '5min', legend: 'radar'},
+  {id: 'atm_surf_air_weather_icon_thunderstorm_code_3hourly',  label: 'Thunderstorms (forecast, 3-hourly)',  grid: 'adfd', kind: '3h',    legend: 'storm'},
+  {id: 'atm_surf_air_temp_heatwave_severity_code_daily',       label: 'Heatwave severity (forecast, daily)', grid: 'adfd', kind: 'daily', anchorH: 0, legend: 'heat'},
+  {id: 'atm_surf_air_precip_any_probability_percent_3hourly',  label: 'Chance of rain, at least 0.2 mm (forecast, 3-hourly)', grid: 'adfd', kind: '3h', legend: 'chance'},
+  {id: 'atm_surf_air_precip_any_probability_percent_daily',    label: 'Chance of rain, at least 0.2 mm (forecast, daily)', grid: 'adfd', kind: 'daily', anchorH: 15, legend: 'chance'},
+  {id: 'atm_surf_air_temp_cel_3hourly',                        label: 'Air temperature (forecast, 3-hourly)', grid: 'adfd', kind: '3h', legend: 'temp'},
+  // wind is two layers drawn together, as on BOM's map: speed as colour, direction as arrows (overlay)
+  {id: 'atm_surf_air_wind_speed_10m_avg_kmh_3hourly',          label: 'Wind speed and direction (forecast, 3-hourly)', grid: 'adfd', kind: '3h', legend: 'wind', overlay: 'atm_surf_air_wind_dirn_10m_deg_t_3hourly'}
+];
+var BOM_TILE_MAXZ     = 8;       // finest zoom the service has
+var BOM_RADAR_FRAMES  = 9;       // BOM lists 9 radar frames, 5 minutes apart (45 minutes)
+var BOM_FC_STEPS      = {'3h': 40, daily: 7};   // forecast times offered (40 x 3 h = 5 days)
+var BOM_TILE_BUDGET   = 600;     // tile requests allowed for one full set of radar frames; fewer frames are kept on very large or very zoomed-in views
+var bomLayerId = (function(){ var v = null; try { v = localStorage.getItem('wt_bom_layer'); } catch (e) {} return BOM_LAYERS.some(function(l){ return l.id === v; }) ? v : BOM_LAYERS[0].id; })();
+var bomTileStat       = {ok: 0, err: 0};
+var bomRadarFramesAll = [];      // frame times (ms), oldest first. Radar: the 9 frames. Forecast: every time offered.
+var bomRadarActive    = [];      // radar only: [{ms, layer}] frames currently on the map
+var bomRadarLayerByStamp = {};   // ms -> layer. Kept between refreshes so a frame already loaded is not requested again
+var bomRadarGen = 0, bomRadarWatch = null, bomRadarZoomHooked = false, bomRadarRebalanceTimer = null, bomTileLayerCls = null, bomFcOffset = 0;
+
+function bomCur(){ return BOM_LAYERS.filter(function(l){ return l.id === bomLayerId; })[0] || BOM_LAYERS[0]; }
+function bomIsFc(){ return bomCur().kind !== '5min'; }
+function bomTStamp(ms){                                         // "2026-11-20T23:40Z": the form BOM's own page uses (no seconds)
+  var d = new Date(ms), p = function(n){ return (n < 10 ? '0' : '') + n; };
+  return d.getUTCFullYear() + '-' + p(d.getUTCMonth() + 1) + '-' + p(d.getUTCDate()) + 'T' + p(d.getUTCHours()) + ':' + p(d.getUTCMinutes()) + 'Z';
+}
+function bomTUrl(def, stamp, z, row, col, layerId){
+  return BOM_TILE_BASE + '/' + (layerId || def.id) + '/default/' + stamp + '/' + BOM_TILE_GRIDS[def.grid].set + '/' + z + '/' + row + '/' + col + '.png';
+}
+// Forecast times to offer, earliest first: 3-hourly layers from the slot containing now, daily layers from the latest anchor time at or before now.
+function bomTLayerTimes(def, nowMs){
+  var H3 = 10800000, DAY = 86400000, out = [], i, t, n = BOM_FC_STEPS[def.kind];
+  if (def.kind === '3h') { t = Math.floor(nowMs / H3) * H3; for (i = 0; i < n; i++) out.push(t + i * H3); }
+  else if (def.kind === 'daily') { var a = (def.anchorH || 0) * 3600000; t = Math.floor((nowMs - a) / DAY) * DAY + a; for (i = 0; i < n; i++) out.push(t + i * DAY); }
+  return out;
+}
+// Which BOM tiles cover one standard (Leaflet) tile z/x/y, and where each sits inside it, in pixels.
+function bomTSources(gridName, z, x, y){
+  var G = BOM_TILE_GRIDS[gridName], def = G && G.Z[z]; if (!def) return [];
+  var res = 156543.03392804097 / Math.pow(2, z), tm = res * 256, R0 = 20037508.342789244;
+  var sx0 = -R0 + x * tm, syTop = R0 - y * tm, out = [];
+  var c0 = Math.max(0, Math.floor((sx0 - G.X0) / tm)), c1 = Math.min(def[1] - 1, Math.floor((sx0 + tm - 1e-6 - G.X0) / tm));
+  var r0 = Math.max(0, Math.floor((def[0] - syTop) / tm)), r1 = Math.min(def[2] - 1, Math.floor((def[0] - (syTop - tm) - 1e-6) / tm));
+  for (var r = r0; r <= r1; r++) for (var c = c0; c <= c1; c++) {
+    out.push({row: r, col: c, dx: (G.X0 + c * tm - sx0) / res, dy: (syTop - (def[0] - r * tm)) / res});
   }
+  return out;
+}
+function bomTileLayerNew(def, stamp, layerId){                           // a Leaflet grid layer for one frame (defined on first use so load order does not matter)
+  if (!bomTileLayerCls) {
+    bomTileLayerCls = L.GridLayer.extend({
+      createTile: function(coords, done){
+        var self = this, canvas = L.DomUtil.create('canvas', 'leaflet-tile'), size = this.getTileSize();
+        canvas.width = size.x; canvas.height = size.y;
+        var src = bomTSources(this.options.def.grid, coords.z, coords.x, coords.y), pending = src.length, ctx = canvas.getContext('2d');
+        function finish(okk){ if (okk) bomTileStat.ok++; else bomTileStat.err++; if (--pending === 0) done(null, canvas); }
+        if (!pending) { setTimeout(function(){ done(null, canvas); }, 0); return canvas; }
+        src.forEach(function(s){
+          var img = new Image();                                  // no crossOrigin: BOM's headers only allow its own site to read pixels, and we never need to
+          img.onload  = function(){ ctx.drawImage(img, Math.round(s.dx), Math.round(s.dy)); finish(true); };
+          img.onerror = function(){ finish(false); };
+          img.src = bomTUrl(self.options.def, self.options.stamp, coords.z, s.row, s.col, self.options.layerId);
+        });
+        return canvas;
+      }
+    });
+  }
+  return new bomTileLayerCls({def: def, stamp: stamp, layerId: layerId || def.id, tileSize: 256, opacity: 0, zIndex: layerId && layerId !== def.id ? 311 : 310, maxNativeZoom: BOM_TILE_MAXZ, className: 'wt-bomtile',
+    attribution: 'Radar and forecasts &copy; <a href="https://www.bom.gov.au" target="_blank">Bureau of Meteorology</a>'});
+}
+function bomTProbe(url, ms){
+  return new Promise(function(res){
+    var im = new Image(), done = false, t = setTimeout(function(){ if (!done) { done = true; res(false); } }, ms || 8000);
+    im.onload  = function(){ if (!done) { done = true; clearTimeout(t); res(true); } };
+    im.onerror = function(){ if (!done) { done = true; clearTimeout(t); res(false); } };
+    im.src = url;
+  });
+}
+function bomProbeUrl(def, ms){ var p = BOM_TILE_GRIDS[def.grid].probe; return bomTUrl(def, bomTStamp(ms), p[0], p[1], p[2]); }
+// The newest radar frame BOM lists can run ahead of what is published, so test a real tile from the newest slot backwards.
+function bomRadarFindNewest(def){
+  var base = Math.floor(Date.now() / 300000) * 300000, k = 0;
+  function next(){
+    if (k > 9) return Promise.resolve(null);
+    var ms = base - k * 300000; k++;
+    return bomTProbe(bomProbeUrl(def, ms), 8000).then(function(ok){ return ok ? ms : next(); });
+  }
+  return next();
+}
+function bomFcFindStart(def, times){                            // first of the first few forecast times that answers (-1 if none)
+  var i = 0;
+  function next(){
+    if (i >= Math.min(4, times.length)) return Promise.resolve(-1);
+    var k = i++;
+    return bomTProbe(bomProbeUrl(def, times[k]), 8000).then(function(ok){ return ok ? k : next(); });
+  }
+  return next();
+}
+// Every radar frame needs about (tiles across x tiles down) requests, so on big or zoomed-in views fewer frames are kept.
+function bomRadarFrameLimit(){
+  var sz = map.getSize(), ts = 256 * Math.pow(2, Math.max(0, map.getZoom() - BOM_TILE_MAXZ));
+  var n = (Math.ceil(sz.x / ts) + 1) * (Math.ceil(sz.y / ts) + 1);
+  return Math.max(3, Math.min(BOM_RADAR_FRAMES, Math.floor(BOM_TILE_BUDGET / n)));
+}
+function bomRadarRemoveAll(){ Object.keys(bomRadarLayerByStamp).forEach(function(k){ var l = bomRadarLayerByStamp[k]; if (map.hasLayer(l)) map.removeLayer(l); }); }
+function bomRadarReset(){ bomRadarGen++; clearTimeout(bomRadarWatch); stopBomRadarPlay(); bomRadarRemoveAll(); bomRadarLayerByStamp = {}; bomRadarActive = []; bomRadarFramesAll = []; bomRadarLoaded = false; bomTileStat = {ok: 0, err: 0}; }
+function bomRadarCurrentLayer(){
+  if (bomIsFc()) return bomRadarLayerByStamp[bomRadarFramesAll[bomRadarCurrentIdx]];
+  var a = bomRadarActive[bomRadarCurrentIdx]; return a && a.layer;
 }
 
-function loadBomRadarMeta(){
-  document.getElementById('bom-radar-age-label').textContent = 'Loading...';
-  fetch(BOM_RADAR_META_URL + '?t=' + Date.now())
-    .then(function(r){
-      if(!r.ok) throw new Error('HTTP ' + r.status);
-      return r.json();
-    })
-    .then(function(meta){
-      bomRadarMeta = meta;
-      var prodObj = meta.products || {};
-
-      // Composite product only \u2014 individual products are not loaded in the browser.
-      // Use RainViewer (btn-radar) as fallback if BOM composite is unavailable.
-      if(!prodObj['composite']){
-        document.getElementById('bom-radar-age-label').textContent = 'Composite not ready';
-        console.warn('BOM Radar: composite product not found in radar_meta.json');
-        return;
-      }
-
-      bomRadarProducts = [{
-        id: 'composite',
-        name: prodObj['composite'].name,
-        bounds: prodObj['composite'].bounds,
-        frames: prodObj['composite'].frames || []
-      }];
-
-      if(!bomRadarProducts[0].frames.length){
-        document.getElementById('bom-radar-age-label').textContent = 'No frames';
-        return;
-      }
-
-      bomRadarLoaded = true;
-      bomRadarProductIdx = 0;
-      buildBomRadarProduct(bomRadarProductIdx);
-    })
-    .catch(function(e){
-      document.getElementById('bom-radar-age-label').textContent = 'Failed: ' + e.message;
-      console.warn('BOM radar meta load failed:', e);
-    });
+// ---- legends (colours are the ones BOM draws; names follow BOM's own wording) ----
+var BOM_RADAR_PALETTE = ['#f5f5ff', '#b4b4ff', '#7878ff', '#1414ff', '#00d8c3', '#009690', '#006666', '#ffff00', '#ffc800', '#ff9600', '#ff6400', '#ff0000', '#c80000', '#780000'];
+// Colour bins copied from BOM's own legends (sampled from its map page on 21 Nov 2026), lowest first.
+var BOM_BINS = {
+  chance: {lo: '0', hi: '90+ %', cols: ['#e5f2fa', '#cce6f7', '#99ceee', '#67b5e6', '#349ddd', '#0184d5'], names: ['0 to 10', '10 to 25', '25 to 50', '50 to 75', '75 to 90', '90 to 100']},
+  temp:   {lo: '< 0', hi: '45+ \u00B0C', cols: ['#103d62', '#0e7692', '#2eaca5', '#6dcca6', '#afefaf', '#eefeb5', '#f4e170', '#eabb47', '#cb7422', '#ad4703', '#711904'], names: ['< 0', '0 to 5', '5 to 10', '10 to 15', '15 to 20', '20 to 25', '25 to 30', '30 to 35', '35 to 40', '40 to 45', '45+']},
+  wind:   {lo: '0', hi: '90+ km/h', cols: ['#f0e1fe', '#e8c9f7', '#dcadf3', '#c58ae2', '#d6733d', '#ce5b1c', '#b7480c', '#933103', '#601f01', '#361a00'], names: ['0 to 10', '10 to 20', '20 to 30', '30 to 40', '40 to 50', '50 to 60', '60 to 70', '70 to 80', '80 to 90', '90+'], arrows: true}
+};
+function bomLegendHtml(kind){
+  var sw = function(c, t){ return '<span class="bom-lg-sw" style="background:' + c + '"></span>' + t + ' '; };
+  if (kind === 'radar') return 'Light <span class="bom-lg-bar" style="background:linear-gradient(to right,' + BOM_RADAR_PALETTE.join(',') + ')"></span> Heavy';
+  if (kind === 'storm') return sw('#f19a9a', 'Thunderstorms forecast');
+  if (kind === 'heat')  return sw('#f8cf00', 'Low-intensity') + sw('#f48000', 'Severe');
+  var b = BOM_BINS[kind]; if (!b) return '';
+  return b.lo + ' ' + b.cols.map(function(c, i){ return '<span class="bom-lg-blk" title="' + b.names[i] + '" style="background:' + c + '"></span>'; }).join('') + ' ' + b.hi + (b.arrows ? ' &#8595; direction' : '');
+}
+function bomLayerUi(){                                          // fill the drop-down once, show the chosen layer and its colour key
+  var sel = document.getElementById('bom-layer-select');
+  if (sel && !sel.options.length) BOM_LAYERS.forEach(function(l){ var o = document.createElement('option'); o.value = l.id; o.textContent = l.label; sel.appendChild(o); });
+  if (sel) sel.value = bomLayerId;
+  var lg = document.getElementById('bom-radar-legend'); if (lg) { lg.innerHTML = bomLegendHtml(bomCur().legend); lg.title = 'Colours as drawn by BOM. Names follow BOM\'s own scale.'; }
 }
 
-function buildBomRadarProduct(pidx){
-  // Remove any existing overlay layers from map
-  bomRadarLayers.forEach(function(l){ if(map.hasLayer(l)) map.removeLayer(l); });
-  bomRadarLayers = [];
+// ---- failures ----
+function bomRadarFallback(msg){                                 // radar tiles are not usable: show RainViewer instead
+  bomRadarReset(); bomRadarVisible = false;
+  var btn = document.getElementById('btn-bom-radar'); btn.classList.remove('bom-radar-on'); btn.title = 'BOM live tiles are not available right now';
+  document.getElementById('bom-radar-controls').classList.add('hidden');
+  if (typeof radarVisible !== 'undefined' && !radarVisible) toggleRadarLayer();
+  showToast(msg + ' - showing the RainViewer radar instead.');
+  try { console.warn('BOM radar fallback:', msg); } catch (e) {}
+}
+function bomForecastFail(msg){                                  // a forecast layer is not usable: go back to the radar
+  var name = bomCur().label;
+  bomRadarReset(); bomLayerId = BOM_LAYERS[0].id; try { localStorage.setItem('wt_bom_layer', bomLayerId); } catch (e) {}
+  bomLayerUi(); showToast('BOM ' + name + ' ' + msg + ' - back to the radar.');
+  if (bomRadarVisible) loadBomRadar();
+}
+function bomFail(msg){ if (bomIsFc()) bomForecastFail(msg); else bomRadarFallback('BOM radar tiles ' + msg); }
 
-  var product = bomRadarProducts[pidx];
-  if(!product){ return; }
-
-  var frames        = product.frames;
-  var bounds        = product.bounds; // [S, W, N, E]
-  var leafletBounds = [[bounds[0], bounds[1]], [bounds[2], bounds[3]]];
-  var totalFrames   = frames.length;
-  var loadedCount   = 0;
-  var frameReady    = new Array(totalFrames).fill(false);
-
-  document.getElementById('bom-radar-product-label').textContent = product.name;
-  document.getElementById('bom-radar-age-label').textContent = 'Loading...';
-
-  bomRadarLayers = frames.map(function(f, i){
-    // f.file already includes "radar/" prefix e.g. "radar/IDR00004_00.png"
-    var url = BOM_RADAR_REPO_URL + f.file + '?t=' + Math.floor(Date.now() / 60000);
-    var overlay = L.imageOverlay(url, leafletBounds, {
-      opacity: 0,
-      zIndex: 310,
-      crossOrigin: true,
-      attribution: 'Radar &copy; <a href="https://www.bom.gov.au" target="_blank">Bureau of Meteorology</a>'
+// ---- radar frames ----
+function bomRadarSelect(){                                      // put the newest frames (as many as the budget allows) on the map, take the rest off
+  var def = bomCur(), all = bomRadarFramesAll, limit = bomRadarFrameLimit(), act = all.slice(all.length - limit), keep = {}, inAll = {};
+  act.forEach(function(ms){ keep[ms] = true; }); all.forEach(function(ms){ inAll[ms] = true; });
+  Object.keys(bomRadarLayerByStamp).forEach(function(k){
+    var l = bomRadarLayerByStamp[k];
+    if (!keep[k] && map.hasLayer(l)) map.removeLayer(l);
+    if (!inAll[k]) delete bomRadarLayerByStamp[k];                  // aged out of BOM's 45 minute window
+  });
+  act.forEach(function(ms){
+    var l = bomRadarLayerByStamp[ms];
+    if (!l) { l = bomTileLayerNew(def, bomTStamp(ms)); l._wtReady = false; l.on('load', function(){ l._wtReady = true; bomRadarCheckReady(); }); bomRadarLayerByStamp[ms] = l; }
+    if (!map.hasLayer(l)) l.addTo(map);
+  });
+  bomRadarActive = act.map(function(ms){ return {ms: ms, layer: bomRadarLayerByStamp[ms]}; });
+  if (!bomRadarZoomHooked) {
+    bomRadarZoomHooked = true;
+    map.on('zoomend resize', function(){
+      clearTimeout(bomRadarRebalanceTimer);
+      bomRadarRebalanceTimer = setTimeout(function(){
+        if (!bomRadarVisible || bomIsFc() || !bomRadarFramesAll.length || bomRadarFrameLimit() === bomRadarActive.length) return;
+        stopBomRadarPlay(); bomRadarSelect();
+      }, 700);
     });
-
-    function onFrameReady(idx){
-      if(!frameReady[idx]){
-        frameReady[idx] = true;
-        loadedCount++;
-        var pct = Math.round(loadedCount / totalFrames * 100);
-        document.getElementById('bom-radar-age-label').textContent = 'Loading ' + pct + '%';
-        if(loadedCount === totalFrames){
-          bomRadarLastLoaded = Date.now();
-          buildBomRadarTimeline();
-          bomRadarCurrentIdx = 0; // start from most-recent (frame 00 = newest)
-          showBomRadarFrame(bomRadarCurrentIdx);
-          startBomRadarPlay();
-        }
-      }
-    }
-
-    overlay.on('load',  (function(idx){ return function(){ onFrameReady(idx); }; })(i));
-    overlay.on('error', (function(idx){ return function(){ onFrameReady(idx); }; })(i));
-    overlay.addTo(map);
-    return overlay;
+  }
+  if (bomRadarLoaded) { buildBomRadarTimeline(); showBomRadarFrame(bomRadarActive.length - 1); startBomRadarPlay(); }   // re-selected after a zoom or refresh
+  else bomRadarCheckReady();
+}
+function bomRadarCheckReady(){                                  // called as each radar frame finishes loading
+  if (!bomRadarVisible || bomIsFc() || bomRadarLoaded || !bomRadarActive.length) return;
+  var n = 0; bomRadarActive.forEach(function(a){ if (a.layer._wtReady) n++; });
+  if (n < bomRadarActive.length) { document.getElementById('bom-radar-age-label').textContent = 'Loading ' + Math.round(n / bomRadarActive.length * 100) + '%'; return; }
+  clearTimeout(bomRadarWatch);
+  if (bomTileStat.err > 5 && bomTileStat.err >= bomTileStat.ok) { bomFail('are failing to load'); return; }
+  bomRadarLoaded = true; bomRadarLastLoaded = Date.now();
+  buildBomRadarTimeline(); showBomRadarFrame(bomRadarActive.length - 1); startBomRadarPlay();
+}
+function loadBomRadar(){
+  var gen = ++bomRadarGen, def = bomCur();
+  document.getElementById('bom-radar-age-label').textContent = 'Loading...';
+  clearTimeout(bomRadarWatch);
+  bomRadarWatch = setTimeout(function(){ if (gen === bomRadarGen && bomRadarVisible && !bomRadarLoaded) bomFail('are not loading'); }, 30000);
+  bomRadarFindNewest(def).then(function(newest){
+    if (gen !== bomRadarGen || !bomRadarVisible) return;
+    if (newest === null) { bomRadarFallback('BOM radar tiles did not answer'); return; }
+    bomRadarFramesAll = [];
+    for (var i = BOM_RADAR_FRAMES - 1; i >= 0; i--) bomRadarFramesAll.push(newest - i * 300000);
+    bomTileStat = {ok: 0, err: 0};
+    bomRadarSelect();
   });
 }
 
+// ---- forecast layers: one time on the map at a time (plus the next, loaded ahead for smooth stepping) ----
+function loadBomForecast(){
+  var gen = ++bomRadarGen, def = bomCur(), times = bomTLayerTimes(def, Date.now());
+  document.getElementById('bom-radar-age-label').textContent = 'Loading...';
+  bomTileStat = {ok: 0, err: 0};
+  bomFcFindStart(def, times).then(function(k){
+    if (gen !== bomRadarGen || !bomRadarVisible) return;
+    if (k < 0) { bomForecastFail('did not answer'); return; }
+    bomFcOffset = k; bomRadarFramesAll = times; bomRadarLoaded = true; bomRadarLastLoaded = Date.now();
+    bomFcBuildSlider(); bomFcShow(k);
+  });
+}
+function bomFcBuildSlider(){
+  var tl = document.getElementById('bom-radar-timeline'); tl.innerHTML = '';
+  var r = document.createElement('input'); r.type = 'range'; r.min = 0; r.max = bomRadarFramesAll.length - 1; r.value = bomRadarCurrentIdx; r.id = 'bom-fc-slider';
+  r.style.width = '150px'; r.title = 'Forecast time';
+  r.oninput = function(){ jumpBomRadarFrame(parseInt(this.value)); };
+  tl.appendChild(r);
+}
+function bomFcLabel(ms, def){
+  var o = def.kind === 'daily' ? {weekday: 'short', day: 'numeric', month: 'short'} : {weekday: 'short', hour: '2-digit', minute: '2-digit', hour12: false};
+  o.timeZone = 'Australia/Sydney'; return new Date(ms).toLocaleString('en-AU', o);
+}
+function bomFcShow(i){
+  var def = bomCur(), all = bomRadarFramesAll, ms = all[i]; if (ms === undefined) return;
+  bomRadarCurrentIdx = i;
+  var need = {};                                                // keys: the time for the layer, time + '|o' for its overlay (wind arrows)
+  [ms, all[i + 1]].forEach(function(t){ if (t === undefined) return; need[t] = {t: t, id: def.id, cur: t === ms}; if (def.overlay) need[t + '|o'] = {t: t, id: def.overlay, cur: t === ms}; });
+  Object.keys(bomRadarLayerByStamp).forEach(function(k){ var l = bomRadarLayerByStamp[k]; if (!need[k] && map.hasLayer(l)) map.removeLayer(l); });
+  Object.keys(need).forEach(function(k){
+    var n = need[k], l = bomRadarLayerByStamp[k];
+    if (!l) { l = bomTileLayerNew(def, bomTStamp(n.t), n.id); l.on('load', function(){ if (bomRadarVisible && bomIsFc() && bomTileStat.err >= 4 && bomTileStat.ok === 0) bomForecastFail('tiles are failing to load'); }); bomRadarLayerByStamp[k] = l; }
+    if (!map.hasLayer(l)) l.addTo(map);
+    l.setOpacity(n.cur ? (n.id === def.id ? BOM_RADAR_OPACITY : 1) : 0);
+  });
+  var sl = document.getElementById('bom-fc-slider'); if (sl) sl.value = i;
+  document.getElementById('bom-radar-time-label').textContent = bomFcLabel(ms, def);
+  document.getElementById('bom-radar-age-label').textContent = 'BOM forecast';
+}
+function bomFcRefresh(){                                        // the 5-minute cycle: move the list of times on when the 3-hour or daily slot changes
+  var def = bomCur(), times = bomTLayerTimes(def, Date.now()), cur = bomRadarFramesAll[bomRadarCurrentIdx];
+  if (!bomRadarLoaded || (times.length === bomRadarFramesAll.length && times[0] === bomRadarFramesAll[0])) return;
+  var idx = times.indexOf(cur); if (idx < 0) idx = Math.min(bomFcOffset, times.length - 1);
+  bomRadarFramesAll = times; bomFcBuildSlider(); bomFcShow(idx);
+}
+// switching layer from the drop-down
+function setBomLayer(id){
+  if (!BOM_LAYERS.some(function(l){ return l.id === id; }) || id === bomLayerId) { bomLayerUi(); return; }
+  bomRadarReset(); bomLayerId = id; try { localStorage.setItem('wt_bom_layer', id); } catch (e) {}
+  bomRadarCurrentIdx = 0; bomLayerUi();
+  document.getElementById('bom-radar-timeline').innerHTML = '';
+  if (bomRadarVisible) { if (bomIsFc()) loadBomForecast(); else loadBomRadar(); }
+}
+
+function toggleBomRadarLayer(){
+  bomRadarVisible = !bomRadarVisible;
+  var btn = document.getElementById('btn-bom-radar'), ctl = document.getElementById('bom-radar-controls');
+  if (bomRadarVisible) {
+    btn.classList.add('bom-radar-on'); ctl.classList.remove('hidden'); bomLayerUi();
+    var fresh = bomRadarFramesAll.length && (Date.now() - bomRadarLastLoaded) <= 4 * 60 * 1000;
+    if (bomIsFc()) { if (fresh && bomRadarLoaded) bomFcShow(bomRadarCurrentIdx); else { bomRadarLoaded = false; loadBomForecast(); } }
+    else { bomRadarLoaded = false; if (fresh) bomRadarSelect(); else loadBomRadar(); }   // frames still current are put straight back; otherwise ask BOM again
+  } else {
+    btn.classList.remove('bom-radar-on'); ctl.classList.add('hidden');
+    stopBomRadarPlay(); bomRadarGen++; clearTimeout(bomRadarWatch);
+    bomRadarRemoveAll();                                        // nothing is requested while the layer is off
+  }
+}
 function buildBomRadarTimeline(){
-  var product = bomRadarProducts[bomRadarProductIdx];
-  var frames  = product ? product.frames : [];
-  var tl = document.getElementById('bom-radar-timeline');
-  tl.innerHTML = '';
-  // frames are ordered newest-first (00=newest) \u2014 display left=oldest, right=newest
-  var displayFrames = frames.slice().reverse();
-  displayFrames.forEach(function(f, displayIdx){
-    // map display index back to actual array index
-    var actualIdx = frames.length - 1 - displayIdx;
+  var tl = document.getElementById('bom-radar-timeline'); tl.innerHTML = '';
+  bomRadarActive.forEach(function(a, i){                        // left = oldest, right = newest
     var tick = document.createElement('div');
-    tick.className = 'bom-radar-tick';
-    tick.title = formatBomRadarTime(f.utc);
-    tick.dataset.idx = actualIdx;
-    tick.onclick = (function(idx){ return function(){ jumpBomRadarFrame(idx); }; })(actualIdx);
+    tick.className = 'bom-radar-tick'; tick.title = formatBomRadarTime(a.ms); tick.dataset.idx = i;
+    tick.onclick = (function(idx){ return function(){ jumpBomRadarFrame(idx); }; })(i);
     tl.appendChild(tick);
   });
   updateBomRadarTicks();
 }
-
 function updateBomRadarTicks(){
   var ticks = document.querySelectorAll('.bom-radar-tick');
-  ticks.forEach(function(t){
-    t.classList.toggle('active', parseInt(t.dataset.idx) === bomRadarCurrentIdx);
-  });
+  ticks.forEach(function(t){ t.classList.toggle('active', parseInt(t.dataset.idx) === bomRadarCurrentIdx); });
 }
-
 function showBomRadarFrame(idx){
-  bomRadarLayers.forEach(function(l, i){
-    l.setOpacity(i === idx ? BOM_RADAR_OPACITY : 0);
-  });
-  bomRadarCurrentIdx = idx;
-  updateBomRadarTicks();
-
-  var product = bomRadarProducts[bomRadarProductIdx];
-  if(product && product.frames[idx]){
-    var f = product.frames[idx];
-    document.getElementById('bom-radar-time-label').textContent = formatBomRadarTime(f.utc);
-    // frame 00 is the newest \u2014 show age for it
-    if(idx === 0){
-      var ageMin = Math.round((Date.now() - new Date(f.utc).getTime()) / 60000);
-      document.getElementById('bom-radar-age-label').textContent = 'BOM \u00B7 ' + ageMin + 'm ago';
-    } else {
-      document.getElementById('bom-radar-age-label').textContent = 'BOM Radar';
-    }
-  }
+  if (bomIsFc()) { bomFcShow(idx); return; }
+  bomRadarActive.forEach(function(a, i){ a.layer.setOpacity(i === idx ? BOM_RADAR_OPACITY : 0); });
+  bomRadarCurrentIdx = idx; updateBomRadarTicks();
+  var a = bomRadarActive[idx]; if (!a) return;
+  document.getElementById('bom-radar-time-label').textContent = formatBomRadarTime(a.ms);
+  if (idx === bomRadarActive.length - 1) {
+    var ageMin = Math.round((Date.now() - a.ms) / 60000);
+    document.getElementById('bom-radar-age-label').textContent = 'BOM \u00B7 ' + ageMin + 'm ago';
+  } else document.getElementById('bom-radar-age-label').textContent = 'BOM Radar';
 }
-
-function formatBomRadarTime(utcStr){
-  // utcStr is ISO e.g. "2026-05-15T22:18Z"
-  var d = new Date(utcStr);
-  return d.toLocaleTimeString('en-AU', {
-    hour: '2-digit', minute: '2-digit',
-    hour12: false, timeZone: 'Australia/Sydney'
-  });
+function formatBomRadarTime(t){
+  var d = new Date(t);
+  return d.toLocaleTimeString('en-AU', {hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Australia/Sydney'});
 }
-
-function jumpBomRadarFrame(idx){
-  stopBomRadarPlay();
-  showBomRadarFrame(idx);
-}
-
+function jumpBomRadarFrame(idx){ stopBomRadarPlay(); showBomRadarFrame(idx); }
 function startBomRadarPlay(){
-  if(bomRadarPlayTimer) clearInterval(bomRadarPlayTimer);
+  if (bomRadarPlayTimer) clearInterval(bomRadarPlayTimer);
   bomRadarPlaying = true;
   document.getElementById('bom-radar-play-btn').innerHTML = '&#9646;&#9646;';
-  // Animate oldest\u2192newest: frames array is newest-first so we count DOWN from last index to 0
-  bomRadarPlayTimer = setInterval(function(){
-    var product = bomRadarProducts[bomRadarProductIdx];
-    var len = product ? product.frames.length : 0;
-    if(!len) return;
-    // Play oldest\u2192newest: start at len-1, step toward 0, loop back
-    var next = (bomRadarCurrentIdx <= 0) ? (len - 1) : (bomRadarCurrentIdx - 1);
-    showBomRadarFrame(next);
-  }, 500);
+  bomRadarPlayTimer = setInterval(function(){                   // oldest to newest, then round again
+    var n = bomIsFc() ? bomRadarFramesAll.length : bomRadarActive.length; if (!n) return;
+    showBomRadarFrame((bomRadarCurrentIdx + 1) % n);
+  }, bomIsFc() ? 900 : 500);
 }
-
 function stopBomRadarPlay(){
   bomRadarPlaying = false;
-  if(bomRadarPlayTimer){ clearInterval(bomRadarPlayTimer); bomRadarPlayTimer = null; }
+  if (bomRadarPlayTimer) { clearInterval(bomRadarPlayTimer); bomRadarPlayTimer = null; }
   document.getElementById('bom-radar-play-btn').innerHTML = '&#9654;';
 }
+function toggleBomRadarPlay(){ if (bomRadarPlaying) stopBomRadarPlay(); else startBomRadarPlay(); }
 
-function toggleBomRadarPlay(){
-  if(bomRadarPlaying) stopBomRadarPlay();
-  else startBomRadarPlay();
-}
-
-// BOM radar refresh \u2014 called by refreshAll() on the main 5-minute cycle
+// BOM refresh: called by refreshAll() on the main 5-minute cycle. Radar frames already loaded are kept; only a new one is fetched.
 function refreshBomRadarLayer(){
-  if(bomRadarVisible && bomRadarLoaded){
-    stopBomRadarPlay();
-    bomRadarLoaded = false;
-    bomRadarLayers.forEach(function(l){ if(map.hasLayer(l)) map.removeLayer(l); });
-    bomRadarLayers = [];
-    loadBomRadarMeta();
-  }
+  if (!bomRadarVisible) return;
+  if (bomIsFc()) { bomFcRefresh(); return; }
+  if (bomRadarLoaded) { stopBomRadarPlay(); bomRadarLoaded = false; loadBomRadar(); }
 }
+bomLayerUi();
+/*BOMT-END*/
 
 function startFetching(){
   fetchFDR();
